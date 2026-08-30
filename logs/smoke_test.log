@@ -1,0 +1,10 @@
+loaded 1600 annotated summaries
+distinct models:   16
+distinct articles: 100
+mean rouge1 F1 (n=50): 0.4301
+mean rouge2 F1 (n=50): 0.1699
+mean rougeL F1 (n=50): 0.2697
+mean expert coherence   : 3.467
+mean expert consistency : 4.707
+mean expert fluency     : 4.687
+mean expert relevance   : 3.733
