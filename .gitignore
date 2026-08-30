@@ -216,3 +216,44 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ===== COMP8240 SummEval project =====
+# Large / redistributable-by-URL data
+data/raw/
+data/processed/
+data/external/
+!data/raw/MANIFEST.md
+*.tar.gz
+*.story
+
+# Keep the data we CREATE — it is an assessed deliverable
+!data/new/
+!data/new/**
+
+# Third-party source we cloned rather than authored
+external/
+
+# Environments and model caches
+.venv-orig/
+*.ckpt
+*.pt
+*.bin
+*.safetensors
+.cache/
+
+# Logs: ignore raw output, keep curated evidence
+logs/*
+!logs/.gitkeep
+!logs/smoke_test.log
+
+# Secrets
+.env
+*.key
+
+# LaTeX build artefacts (keep .tex and the final .pdf)
+report/*.aux
+report/*.log
+report/*.out
+report/*.bbl
+report/*.blg
+report/*.synctex.gz
