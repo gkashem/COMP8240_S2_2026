@@ -219,7 +219,7 @@ __marimo__/
 
 # ===== COMP8240 SummEval project =====
 # Large / redistributable-by-URL data
-data/raw/
+data/raw/*
 data/processed/
 data/external/
 !data/raw/MANIFEST.md
