@@ -1,0 +1,259 @@
+\documentclass[11pt]{article}
+
+\usepackage[preprint]{acl}
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{array}
+\usepackage{tabularx}
+
+\title{Reproducing \textsc{SummEval}: Re-evaluating Automatic Metrics for
+       Text Summarisation on New Data}
+
+\author{
+  Mohammed Golam Kashem (48728306)\\
+  Master of Data Science, COMP8240: Applications of Data Science \\
+  School of Computing, Macquarie University \\
+  \texttt{mohammedgolam.kashem@students.mq.edu.au} \\
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Automatic text summarisation is commonly evaluated using ROUGE, which measures word overlap with a human written reference. However, evidence that ROUGE closely reflects human judgement is limited. \citet{fabbri-etal-2021-summeval} evaluate 14 automatic metrics against 12{,}800 expert and crowd sourced ratings of 1{,}600 machine generated summaries. They find that agreement is weakest for coherence and relevance, and that crowd sourced ratings do not correlate with expert ratings.
+
+This project will reproduce a defined subset of this meta evaluation using the original data. It will then extend the analysis to two types of new data. The first is an existing corpus annotated under a different protocol. The second is a small corpus from a domain outside news that will be constructed and annotated for this project. An LLM based evaluation will also be included as a third point of comparison.
+\end{abstract}
+
+\section{Description of Paper}
+\label{sec:paper}
+
+\subsection{Summarisation and Its Evaluation}
+
+Automatic text summarisation compresses a document into a shorter text while preserving its most important information. Systems are generally divided into \emph{extractive} approaches, which select text from the source, and \emph{abstractive} approaches, which generate new wording. For example, given the passage \textit{``Heavy rain closed the M4 for six hours on Tuesday. Police diverted traffic through Reading, and the motorway reopened shortly before midnight.''}, an extractive system might return the first sentence. An abstractive system might instead produce \textit{``Flooding shut the M4 for most of Tuesday, with traffic diverted via Reading.''} This difference matters because metrics based on word overlap may naturally favour extractive summaries.
+
+Since many summaries can be acceptable for the same document, summary quality cannot be measured as directly as classifier accuracy. The field therefore relies mainly on metrics that compare system outputs with human written references. ROUGE is the most widely used metric, while human ratings are sometimes used as an additional evaluation. This raises the question of whether automatic metrics actually agree with human judgement. \emph{Meta evaluation} addresses this by evaluating the metrics themselves rather than the summarisation systems. This is important because metric based leaderboards inherit the limitations of the metrics they use.
+
+\subsection{Aims and Contributions of \textsc{SummEval}}
+
+The paper, \textsc{SummEval}, directly addresses this question. Rather than introducing a new summarisation system, it presents a meta evaluation and the resources needed to perform one. \citet{fabbri-etal-2021-summeval} argue that progress had been limited by different baselines and inconsistent human evaluation protocols. This made published findings difficult to compare, while ROUGE remained the default metric despite known limitations. Their aim is to determine which automatic metrics agree with expert human judgement and to provide shared resources for future studies.
+
+The paper contributes both analysis and resources. The authors re evaluate 14 automatic metrics using a common set of outputs and benchmark 23 summarisation systems on CNN/DailyMail. They also release 44 model outputs from these systems in a unified format and provide a toolkit for computing all 14 metrics. Human ratings are released for outputs from 16 systems across 100 articles. This produces 1{,}600 summaries, each scored by three experts and five crowd workers.
+
+The findings show several limitations in current evaluation methods. Correlations between automatic metrics and expert judgement are weakest for coherence and relevance, while stronger for consistency and fluency. No single metric performs best across all four dimensions. ROUGE-L also correlates less strongly with human judgement than higher order ROUGE variants. In addition, crowd sourced ratings show essentially no correlation with expert ratings, despite using the same instructions. This raises concerns about whether some forms of human evaluation accurately measure summary quality.
+
+\section{Explanation of Evaluation}
+\label{sec:eval}
+
+The paper evaluates 14 metrics from several broad families. \emph{Lexical overlap} measures compare the words and word sequences shared by a candidate summary and its reference, with ROUGE being the most commonly reported, alongside BLEU and CHRF. Embedding based measures compare meaning rather than exact wording. Question answering measures generate questions from the source and test whether the summary can answer them. Reference free measures compare the summary directly with the source document.
+
+Two metrics are explained in detail below. ROUGE is included because one of the paper's main claims concerns its reliability. BERTScore is included because it provides a contrast with lexical overlap. The section also explains the human evaluation protocol, the rank statistic used to compare metrics with human judgement, and the dataset used in the analysis.
+
+\subsection{ROUGE}
+\label{sec:rouge}
+
+An $n$-gram is a sequence of $n$ consecutive words. For example, \textit{the motorway reopened} contains three unigrams, \textit{the}, \textit{motorway} and \textit{reopened}, and two bigrams, \textit{the motorway} and \textit{motorway reopened}. ROUGE \citep{lin-2004-rouge} scores a candidate summary according to the $n$-grams it shares with one or more reference summaries. Let $\mathcal{G}_N(R)$ denote the distinct $n$-grams in reference $R$, while $c_R(g)$ and $c_C(g)$ denote the counts of $n$-gram $g$ in the reference and candidate $C$.
+
+\begin{equation}
+  \label{eq:rouge}
+  \text{ROUGE-}N_{\text{rec}} =
+  \frac{\sum_{g \in \mathcal{G}_N(R)} \min\big(c_R(g), c_C(g)\big)}
+       {\sum_{g \in \mathcal{G}_N(R)} c_R(g)}
+\end{equation}
+
+\noindent The $\min$ operation performs \emph{clipping}, preventing repeated $n$-grams from receiving extra credit. Precision instead uses the candidate's $n$-gram count as the denominator, while $F_1$ is the harmonic mean of precision and recall. \citet{fabbri-etal-2021-summeval} report seven ROUGE variants. This proposal uses ROUGE-1, ROUGE-2 and ROUGE-L $F_1$. ROUGE-L differs because it uses the longest common subsequence rather than direct $n$-gram matching.
+
+\paragraph{Worked example.}
+Consider one article from the annotation release, \texttt{dm-test-c50d33e9}. The identifiers are the record keys in the released annotation file, and are abbreviated here. Its reference summary is \textit{``Jacob Phillips plunged down cliff after leaping over a fence in the dark. Got out of the taxi to `use an ATM' before running away, inquest heard.''} and contains 27 tokens. Model M20, a summariser built on GPT-2, produces \textit{``Jacob Phillips fell down a 70ft cliff to his death in Cardiff.''}, which contains 12 tokens. After converting both summaries to lowercase and removing punctuation, they share seven tokens: \textit{jacob}, \textit{phillips}, \textit{down}, \textit{cliff}, \textit{a}, \textit{to} and \textit{in}. This gives recall $7/27 = 0.259$, precision $7/12 = 0.583$ and $F_1 = 0.359$. Only the bigram \textit{jacob phillips} matches, giving ROUGE-2 $F_1 = 0.054$. The longest common subsequence has length five, giving ROUGE-L $F_1 = 0.256$.
+
+The three experts rated this summary 5.00 for coherence, consistency and fluency. A summary judged to be near perfect therefore receives a ROUGE-2 score of only $0.054$. This shows that bigram matches can be sparse even for high quality summaries. It also shows how precision and recall can differ when the candidate is much shorter than the reference.
+
+The opposite can also occur. Model M17's summary of article \texttt{cnn-test-c05bda9b} closely copies the opening of the reference and receives high lexical overlap. However, experts rated it only 2.00 for coherence and 2.00 for relevance. These examples show that lexical overlap is neither necessary nor sufficient for summary quality.
+
+These examples use one reference, while the paper computes metrics against eleven references for each article. The values should therefore be treated as a lower bound. The released outputs are also inconsistently preprocessed, so a replication must normalise the text before comparing systems.
+
+\subsection{Embedding-Based Similarity: BERTScore}
+\label{sec:bertscore}
+
+BERTScore \citep{zhang-etal-2020-bertscore} compares words using numerical vectors designed to represent their meaning in context, so that words used in similar ways receive similar vectors. Each candidate word is matched to the most similar reference word, and the resulting similarities are combined into precision, recall and $F_1$. This allows related words such as \textit{fell} and \textit{plunged} to receive credit even when their surface forms differ.
+
+Similarity in meaning does not guarantee factual correctness. A summary saying that Phillips survived the fall could still appear similar to one saying that he died. The reported BERTScore variant also matters. BERTScore recall reaches a system level $\tau$ of $0.66$ against expert consistency judgements, while BERTScore precision reaches $-0.19$ on the same dimension.
+
+\subsection{Human Evaluation Protocol}
+\label{sec:human}
+
+\citet{fabbri-etal-2021-summeval} sampled 100 articles from the CNN/DailyMail test split and evaluated outputs from 16 systems. This produced 1{,}600 summaries, each rated by five crowd workers and three expert annotators, giving 12{,}800 annotations in total.
+
+Ratings range from 1 to 5 across four dimensions. \textbf{Coherence} measures the overall structure and quality of the summary. \textbf{Consistency} measures factual alignment with the source. \textbf{Fluency} measures the grammatical quality of individual sentences. \textbf{Relevance} measures whether important content is selected without unnecessary redundancy.
+
+Agreement is measured using Krippendorff's $\alpha$ \citep{krippendorff-2011-computing}. A value of $1$ represents complete agreement and $0$ indicates agreement no better than chance. Values below roughly $0.67$ are generally considered too unreliable for firm conclusions. Agreement was $0.4920$ among crowd workers and $0.4132$ among experts in the first annotation round. It reached $0.7127$ only after a second expert round. Correlation between averaged expert and crowd scores was also close to zero. The paper therefore reports its main correlations using expert annotations.
+
+Across all 1{,}600 summaries, the expert means are coherence $3.47$, consistency $4.71$, fluency $4.69$ and relevance $3.73$. Consistency and fluency are close to the maximum score and show limited variation, which makes correlations computed against them less stable.
+
+\subsection{Correlating Metrics with Human Judgement}
+\label{sec:tau}
+
+Kendall's $\tau$ \citep{kendall-1938-new} measures agreement between rankings. This is appropriate because automatic metric scores and human ratings use different numerical scales. Pairs are concordant when both rankings order them in the same direction and discordant when the rankings disagree.
+
+\begin{equation}
+  \label{eq:tau}
+  \tau = \frac{C - D}{\tfrac{1}{2}\,n(n-1)}
+\end{equation}
+
+\noindent Here $C$ and $D$ are the numbers of concordant and discordant pairs among $n$ items. The value ranges from $-1$ for completely reversed rankings to $+1$ for complete agreement.
+
+\paragraph{Worked example.}
+Table~\ref{tab:tau} shows four summaries of article \texttt{dm-test-8764fb95}, labelled A to D according to expert coherence. Experts rank them $A > B > C > D$, while ROUGE-1 ranks them $A > C > D > B$. Four of the six pairs are concordant and two are discordant. Therefore,
+
+\[
+  \tau = \frac{4 - 2}{\tfrac{1}{2} \cdot 4 \cdot 3} = 0.333
+\]
+
+\noindent ROUGE agrees with the expert ordering on four of the six pairs. Kendall's $\tau$ considers only the direction of these comparisons. For example, $(C,D)$ remains fully concordant even though their ROUGE scores differ by only $0.001$.
+
+\begin{table}[t]
+  \centering
+  \begin{tabular}{llcc}
+    \toprule
+    & \textbf{Model} & \textbf{Coherence} & \textbf{ROUGE-1} \\
+    \midrule
+    A & M17 & 3.33 & 0.466 \\
+    B & M13 & 2.33 & 0.361 \\
+    C & M14 & 1.67 & 0.405 \\
+    D & M11 & 1.33 & 0.404 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Four system summaries of article
+    \texttt{dm-\allowbreak test-\allowbreak 8764fb95}, ordered by mean expert
+    coherence, with single reference ROUGE-1 $F_1$.}
+  \label{tab:tau}
+\end{table}
+
+On the paper's data, ROUGE-1 reaches $\tau = 0.2500$ against expert coherence and $0.5294$ against consistency. ROUGE-L reaches only $0.0735$ and $0.1471$. The authors explain both patterns. Metrics of this kind compare words and word sequences, so they cannot judge how consecutive sentences fit together, which is what coherence measures. The stronger consistency figures are attributed to the low abstractiveness of the systems evaluated, which makes word overlap an indirect signal of faithfulness, so this result may say more about the systems tested than about the metric.
+
+\paragraph{Summary level versus system level.}
+A \emph{summary level} calculation compares competing summaries for each article and then averages the result across articles. A \emph{system level} calculation first averages each system's metric scores and human ratings across all articles, producing sixteen points and one correlation coefficient. This reduces variation between individual documents and generally produces larger correlations. The paper reports system level correlations following \citet{louis-nenkova-2013-automatically}. A summary level replication therefore provides an additional analysis rather than simply repeating the original result.
+
+\subsection{Datasets Used in the Paper}
+\label{sec:data}
+
+CNN/DailyMail was introduced by \citet{hermann-etal-2015-teaching} as a reading comprehension dataset containing news articles and editorial bullet point highlights. It was adapted for summarisation by \citet{nallapati-etal-2016-abstractive} and standardised by \citet{see-etal-2017-get} into the form commonly used today.
+
+The dataset contains roughly 287{,}000 training and 11{,}490 test article and summary pairs. \citet{fabbri-etal-2021-summeval} annotate 100 sampled test articles. Metrics are calculated against eleven references for each article. These consist of the dataset's original highlight and ten additional references collected by \citet{kryscinski-etal-2020-evaluating}.
+
+Two properties affect reproduction. First, the references are journalists' promotional bullet points rather than summaries written specifically for evaluation. They can contain hyperlinks and references to other articles. The paper's experts rated these references 3.26 for coherence and 4.47 for consistency, below several systems evaluated against them. Second, alignment is imperfect. A total of 38 test examples share duplicate reference summaries and cannot be reliably aligned. These represent $0.3\%$ of the test split, and the affected identifiers are distributed with the data.
+
+\section{Evaluation with an LLM as a Judge}
+\label{sec:llmjudge}
+
+An LLM judge is a large language model prompted to evaluate generated text directly, with its output used as a quality score \citep{zheng-etal-2023-judging}. Common approaches include comparing two candidates, directly scoring one candidate against defined criteria, and scoring against a reference answer.
+
+An LLM judge is well suited to SummEval because its annotators rated summaries from 1 to 5 across four separate criteria while viewing the source document. This matches the direct scoring approach. The judge can therefore use the paper's original annotation instructions rather than a newly designed rubric. \citet{liu-etal-2023-geval} applied a similar method to the same dataset and reported stronger correlation with human judgement than ROUGE. SummEval also provides 1{,}600 summaries with three expert ratings each. This allows an LLM judge to be validated using the same Kendall's $\tau$ method applied to the other metrics.
+
+However, LLM judges have known limitations. They can show position, verbosity and self enhancement bias \citep{zheng-etal-2023-judging}. They may also perform poorly on detailed numeric scales and produce different results across repeated runs. These issues can be reduced by clearly defining each score in the prompt, evaluating each dimension separately, randomising presentation order and averaging repeated runs while reporting the variance. A locally hosted open weight model can also avoid API costs and sending data to a third party. The approach is therefore applicable to this project and can be directly validated against expert judgements.
+
+\section{Justification for Paper Choice}
+\label{sec:justification}
+
+\paragraph{Quality of the source.}
+\citet{fabbri-etal-2021-summeval} was published in \emph{Transactions of the Association for Computational Linguistics} (TACL), the journal of the Association for Computational Linguistics. CORE ranks conferences rather than journals, so the closest indicator is ACL, where TACL papers are also presented. ACL holds a CORE rank of \textbf{A*} under ICORE2026 in Field of Research 4602, Artificial Intelligence.\footnote{\url{https://portal.core.edu.au/conf-ranks/196/}, retrieved 30 August 2026.} It also has a Google Scholar \textbf{h5-index of 236}.\footnote{\url{https://scholar.google.com/citations?view_op=top_venues&hl=en&vq=eng_computationallinguistics}, retrieved 30 August 2026.} The paper had received \textbf{1{,}302} Google Scholar citations by 30 August 2026, showing substantial uptake five years after publication.
+
+\paragraph{Availability of code and data.}
+The repository at \url{https://github.com/Yale-LILY/SummEval} is released under the MIT licence. As of 30 August 2026, it had 414 stars, 45 forks and 24 open issues, with the latest commit dated 15 August 2023. The code is therefore no longer actively maintained and is difficult to install with current software versions. However, this project depends mainly on the released data, which is static and unaffected by the state of the codebase. The expensive work of running 23 systems and collecting eight annotations per summary has already been completed. This makes the meta evaluation reproducible using modest hardware.
+
+\paragraph{Feasibility check.}
+Using a container backed virtual machine and the environment specification committed to my project repository,\footnote{\url{https://github.com/gkashem/COMP8240_S2_2026}} I downloaded the released annotation file \texttt{model\_\allowbreak annotations.\allowbreak aligned.\allowbreak jsonl} (5{,}839{,}062 bytes).\footnote{\url{https://storage.googleapis.com/sfr-summarization-repo-research/model_annotations.aligned.jsonl}} I recorded its URL and SHA-256 checksum and confirmed that it contains exactly 1{,}600 records from 16 systems across 100 articles. Each summary carries three expert and five crowdworker annotations across four dimensions.
+
+I also installed and ran the authors' toolkit. The documented installation does not work with current Python because it pins dependency versions from 2020. Installing the toolkit without these pins and adding only the required dependencies does work. I computed CHRF and BLEU on a sample using the eleven available references. The CHRF values fall within the range reported in the paper. BLEU values are higher, as expected when using sentence level scoring with multiple references instead of the corpus level setting used by the authors. I also ran ROUGE and reproduced the correlation calculations used for the results in Section~\ref{sec:eval}. The scripts and run logs are committed to the repository.
+
+One substitution and one remaining risk should be noted. My ROUGE results use Google's \texttt{rouge-score} implementation, while the original toolkit uses the Perl ROUGE-1.5.5 script. The CNN/DailyMail source articles are also not included with the released data. If the linked source becomes unavailable, the articles can be reconstructed from the public \texttt{cnn\_dailymail} 3.0.0 release and matched using the SHA-1 hash in each identifier. Neither issue affects the main analysis because the metric--human correlations depend primarily on the summaries and annotations.
+
+\begin{table*}[t]
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{lll>{\raggedright\arraybackslash}X}
+    \toprule
+    \textbf{Dataset} & \textbf{Domain} & \textbf{Human judgements} & \textbf{Feasibility assessment} \\
+    \midrule
+    RealSumm \citep{bhandari-etal-2020-reevaluating}
+      & CNN/DM & Content-unit recall
+      & \textbf{Selected.} Public; same source corpus, different annotation
+        protocol. Metric correlations are computed against its single content
+        score, not mapped onto the paper's four dimensions. \\
+    \addlinespace
+    QAGS \citep{wang-etal-2020-asking}
+      & CNN/DM, XSum & Factual consistency
+      & \textbf{Fallback.} Public and directly usable, but covers only
+        consistency; the other three dimensions cannot be correlated. \\
+    \addlinespace
+    FRANK \citep{pagnoni-etal-2021-understanding}
+      & CNN/DM, XSum & Typed factuality errors
+      & \textbf{Viable.} Rich error typology, but categorical rather than
+        scalar; converting counts to a score adds an assumption. \\
+    \addlinespace
+    Newsroom \citep{grusky-etal-2018-newsroom}
+      & Varied outlets & Four-dimension ratings
+      & \textbf{Viable.} Covers several systems and publishers, but its
+        dimensions differ from the paper's, limiting comparability. \\
+    \addlinespace
+    XSum \citep{narayan-etal-2018-dont}
+      & BBC & \textbf{None}
+      & \textbf{Rejected.} Stylistically distinct and highly abstractive, but
+        ships no human judgements of system outputs, so nothing can be
+        correlated. Included to make the constraint explicit. \\
+    \bottomrule
+  \end{tabularx}
+  \caption{Candidate existing datasets to which the \textsc{SummEval}
+    evaluation pipeline has not been applied, assessed against the
+    requirement that a dataset carry human judgements of machine-generated
+    summaries.}
+  \label{tab:candidates}
+\end{table*}
+
+\section{New Data}
+\label{sec:newdata}
+
+\subsection{Type 1 Existing Datasets Not Yet Used}
+\label{sec:newdata-existing}
+
+One constraint governs the choice of an existing dataset. Because SummEval is a meta evaluation, the required data consists of a source document, a system generated summary, a reference summary, and human quality judgements. A suitable dataset must therefore already contain \emph{human judgements of system generated summaries} so that automatic metrics can be correlated with human scores. This excludes most summarisation datasets, including the remaining CNN/DailyMail test articles, the paper's unannotated system outputs, and the ten additional references.
+
+Table~\ref{tab:candidates} compares five possible datasets. RealSumm \citep{bhandari-etal-2020-reevaluating} is the strongest candidate as its outputs and human scores are publicly available.\footnote{\url{https://github.com/neulab/REALSumm}} It contains outputs from 25 systems across 100 CNN/DailyMail documents, producing 2{,}500 judged summaries compared with SummEval's 1{,}600. RealSumm uses the Lightweight Pyramid protocol, which measures how much reference content a summary recovers rather than assigning ratings from 1 to 5 across four dimensions.
+
+This difference makes RealSumm useful for the project. Applying the SummEval analysis to RealSumm tests whether conclusions about agreement between metrics and human judgement remain consistent when the annotation protocol changes but the news domain remains the same. If ROUGE's weak correlation is partly caused by the original rating protocol, this comparison may reveal it. QAGS \citep{wang-etal-2020-asking} provides a fallback option. Newsroom \citep{grusky-etal-2018-newsroom} offers greater system diversity, although its evaluation dimensions do not align closely with the four used in SummEval.
+
+\subsection{Type 2 A Dataset Created for This Project}
+\label{sec:newdata-created}
+
+The second dataset addresses a limitation shared by the existing options. They all focus on news. SummEval draws its conclusions entirely from CNN/DailyMail, so it is unclear whether the findings also apply to other types of text. I will therefore create a small evaluation dataset outside the news domain while keeping the main elements of the original design unchanged.
+
+The dataset will contain 25 to 30 source documents, each paired with a human written reference summary, so that the reference based metrics can be computed. Wikipedia articles supply the body as the source and the lead section as the reference, and arXiv papers supply the introduction as the source and the abstract as the reference. Wikipedia is licensed CC BY-SA, and the arXiv sample will be limited to papers released under a Creative Commons licence, so that the corpus can be redistributed. Sources will be truncated to the CNN/DailyMail length range so that length is not a confound. Four summarisation systems will be applied to each document. These will include LEAD-3 as an extractive baseline, TextRank as an unsupervised extractive method, and two pretrained abstractive models with different capacities. A fifth deliberately weaker configuration will be included to provide greater variation in summary quality. This is important because Section~\ref{sec:human} showed that consistency and fluency scores in the original paper were concentrated near the maximum. The resulting dataset will contain approximately 125 to 150 summaries.
+
+Annotation will follow the original paper's protocol using the same four dimensions and definitions, with ratings from 1 to 5 and the source document available. System identities will be hidden and summaries will be presented in random order. A 20\% subset will be annotated again after a delay to measure agreement within the annotator.
+
+A limitation is that one unpaid annotator is not equivalent to the three experts used in SummEval, whose agreement reached $\alpha = 0.7127$ only after a second reconciliation round. The new ratings will therefore be treated as an internally consistent ranking suitable for correlation analysis rather than as absolute quality scores directly comparable with the original expert ratings. All documents, reference summaries, generated summaries, annotation scripts and ratings will be released in the project repository using the same JSONL structure as the original data. This allows the same analysis pipeline to be applied to both datasets.
+
+\section{Project Plan}
+\label{sec:plan}
+
+Work will continue in the container backed virtual machine used for the feasibility check. The environment specification is committed to the project repository so that the analysis can be reproduced without rebuilding the setup manually \citep{howe-2012-virtual}.
+
+The project has four phases. The first reproduces a defined subset of the paper's correlations using the original data and extends the number of metrics evaluated. Any metric that cannot be run will be documented with the reason. The second applies the same analysis pipeline to RealSumm. The third constructs and annotates the non-news corpus described in Section~\ref{sec:newdata-created}. The fourth evaluates summaries using the LLM judge and validates its scores against expert ratings. The first two phases will be completed for the update presentation, while the remaining phases will be completed for the final report.
+
+Two tasks are on the critical path. The first is metric coverage. Although the toolkit runs, some metrics have complex dependencies that may fail to build. In this case, a justified subset of metrics will be reported rather than allowing one failure to block the project. The second is manual annotation, which cannot be accelerated by additional computing resources. The new corpus is therefore deliberately kept small.
+
+The deliverables are this proposal, an update presentation, a final report, and a public repository containing the report source, constructed data, and all scripts used to create and analyse the results.
+
+\bibliography{custom}
+
+\end{document}

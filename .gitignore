@@ -245,6 +245,10 @@ external/
 logs/*
 !logs/.gitkeep
 !logs/smoke_test.log
+!logs/summ_eval_install_attempt.log
+!logs/summ_eval_install_working.log
+!logs/summ_eval_toolkit_check.log
+!logs/reference_check.log
 
 # Secrets
 .env

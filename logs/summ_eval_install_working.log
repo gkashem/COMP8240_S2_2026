@@ -1,0 +1,35 @@
+Collecting summ-eval
+  Using cached summ_eval-0.892-py3-none-any.whl.metadata (15 kB)
+Downloading summ_eval-0.892-py3-none-any.whl (111 kB)
+Installing collected packages: summ-eval
+Successfully installed summ-eval-0.892
+Collecting gin-config
+  Using cached gin_config-0.5.0-py3-none-any.whl.metadata (2.9 kB)
+Collecting sacrebleu==1.4.14
+  Downloading sacrebleu-1.4.14-py3-none-any.whl.metadata (1.3 kB)
+Collecting portalocker (from sacrebleu==1.4.14)
+  Downloading portalocker-4.3.0-py3-none-any.whl.metadata (11 kB)
+Downloading sacrebleu-1.4.14-py3-none-any.whl (64 kB)
+Downloading gin_config-0.5.0-py3-none-any.whl (61 kB)
+Downloading portalocker-4.3.0-py3-none-any.whl (129 kB)
+Installing collected packages: gin-config, portalocker, sacrebleu
+
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+summ-eval 0.892 requires bert-score, which is not installed.
+summ-eval 0.892 requires blanc, which is not installed.
+summ-eval 0.892 requires click, which is not installed.
+summ-eval 0.892 requires cython, which is not installed.
+summ-eval 0.892 requires moverscore, which is not installed.
+summ-eval 0.892 requires networkx, which is not installed.
+summ-eval 0.892 requires nltk, which is not installed.
+summ-eval 0.892 requires numpy>=1.11.0, which is not installed.
+summ-eval 0.892 requires psutil, which is not installed.
+summ-eval 0.892 requires pyemd==0.5.1, which is not installed.
+summ-eval 0.892 requires pytorch-pretrained-bert, which is not installed.
+summ-eval 0.892 requires sacremoses, which is not installed.
+summ-eval 0.892 requires scipy, which is not installed.
+summ-eval 0.892 requires six, which is not installed.
+summ-eval 0.892 requires spacy>=2.2.0, which is not installed.
+summ-eval 0.892 requires stanza, which is not installed.
+summ-eval 0.892 requires transformers>=2.2.0, which is not installed.
+Successfully installed gin-config-0.5.0 portalocker-4.3.0 sacrebleu-1.4.14

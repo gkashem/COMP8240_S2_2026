@@ -1,0 +1,35 @@
+[OK] bhandari-etal-2020-reevaluating    2020.emnlp-main.751
+[OK] fabbri-etal-2021-summeval          2021.tacl-1.24
+[OK] grusky-etal-2018-newsroom          N18-1065
+
+[DIFFERS] kryscinski-etal-2020-evaluating  (2020.emnlp-main.750)
+    author:
+      yours : Kry{\'s}ci{\'n}ski, Wojciech and McCann, Bryan and Xiong, Caiming and Socher, Richard
+      ACL   : Kryscinski, Wojciech and McCann, Bryan and Xiong, Caiming and Socher, Richard
+[OK] lin-2004-rouge                     W04-1013
+
+[DIFFERS] liu-etal-2023-geval  (2023.emnlp-main.153)
+    title:
+      yours : {G}-{E}val: {NLG} Evaluation using {GPT}-4 with Better Human Alignment
+      ACL   : {G}-Eval: {NLG} Evaluation using Gpt-4 with Better Human Alignment
+[OK] louis-nenkova-2013-automatically   J13-2002
+
+[DIFFERS] nallapati-etal-2016-abstractive  (K16-1028)
+    author:
+      yours : Nallapati, Ramesh and Zhou, Bowen and dos Santos, Cicero and G{\"u}l{\c{c}}ehre, {\c{C}}a{\u{g}}lar and Xiang, Bing
+      ACL   : Nallapati, Ramesh and Zhou, Bowen and dos Santos, Cicero and Gu{\ensuremath{\dot{}}}l{\c{c}}ehre, {\c{C}}a{\u{g}}lar and Xiang, Bing
+[OK] narayan-etal-2018-dont             D18-1206
+[OK] pagnoni-etal-2021-understanding    2021.naacl-main.383
+[OK] see-etal-2017-get                  P17-1099
+[OK] wang-etal-2020-asking              2020.acl-main.450
+[OK] zhao-etal-2019-moverscore          D19-1053
+
+13 entries compared against the ACL Anthology, 3 with problems.
+
+Not on the Anthology, check these by hand:
+  - hermann-etal-2015-teaching
+  - howe-2012-virtual
+  - kendall-1938-new
+  - krippendorff-2011-computing
+  - zhang-etal-2020-bertscore
+  - zheng-etal-2023-judging

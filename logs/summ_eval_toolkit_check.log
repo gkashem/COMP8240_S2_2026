@@ -1,0 +1,11 @@
+data file : data/raw/model_annotations.aligned.jsonl 5839062 bytes
+records   : 1600
+fields    : ['decoded', 'expert_annotations', 'filepath', 'id', 'model_id', 'references', 'turker_annotations']
+toolkit   : /home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval
+
+summaries scored : 50
+references each  : 11
+CHRF mean        : 0.3880
+BLEU mean        : 25.4212
+
+The authors' toolkit was installed and executed successfully.
