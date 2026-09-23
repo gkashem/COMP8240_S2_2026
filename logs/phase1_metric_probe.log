@@ -1,0 +1,22 @@
+Exception ignored in: <function MeteorMetric.__del__ at 0x73468f14f4c0>
+Traceback (most recent call last):
+  File "/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval/meteor_metric.py", line 140, in __del__
+    self.close()
+  File "/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval/meteor_metric.py", line 72, in close
+    if self.meteor_p:
+       ^^^^^^^^^^^^^
+AttributeError: 'MeteorMetric' object has no attribute 'meteor_p'
+OK    cider       {'cider': np.float64(0.0)}
+FAIL  meteor      FileNotFoundError: [Errno 2] No such file or directory: 'java'
+      last frame: File "/opt/conda/lib/python3.12/subprocess.py", line 1955, in _execute_child
+FAIL  moverscore  ModuleNotFoundError: No module named 'moverscore_v2'
+      last frame: from moverscore_v2 import get_idf_dict, word_mover_score
+openjdk version "21.0.12.1" 2026-08-18
+OpenJDK Runtime Environment (build 21.0.12.1+1-1-deb13u1-Debian)
+OpenJDK 64-Bit Server VM (build 21.0.12.1+1-1-deb13u1-Debian, mixed mode, sharing)
+--- meteor after java install ---
+Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+  File "/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval/meteor_metric.py", line 123, in evaluate_batch
+    self.meteor_p.stdin.flush()
+BrokenPipeError: [Errno 32] Broken pipe

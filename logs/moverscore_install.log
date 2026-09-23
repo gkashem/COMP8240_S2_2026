@@ -1,0 +1,37 @@
+Collecting moverscore
+  Using cached moverscore-1.0.3.tar.gz (7.7 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting typing (from moverscore)
+  Downloading typing-3.7.4.3.tar.gz (78 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: portalocker in /home/vscode/summeval-env/lib/python3.12/site-packages (from moverscore) (4.3.0)
+Building wheels for collected packages: moverscore, typing
+  Building wheel for moverscore (pyproject.toml): started
+  Building wheel for moverscore (pyproject.toml): finished with status 'done'
+  Created wheel for moverscore: filename=moverscore-1.0.3-py3-none-any.whl size=8010 sha256=06cc13d8f0c6562f73f4c4a810890e76523ebce740ebb00b46774d240cd95e0d
+  Stored in directory: /home/vscode/.cache/pip/wheels/76/20/33/fffbeb74a615f13ae51c974da807383935518b3ec821609c02
+  Building wheel for typing (pyproject.toml): started
+  Building wheel for typing (pyproject.toml): finished with status 'done'
+  Created wheel for typing: filename=typing-3.7.4.3-py3-none-any.whl size=26396 sha256=aea3c7a5fab8a03d72f78b751dbd27859f18eb5ca7978e267c28e225712223d7
+  Stored in directory: /home/vscode/.cache/pip/wheels/12/98/52/2bffe242a9a487f00886e43b8ed8dac46456702e11a0d6abef
+Successfully built moverscore typing
+Installing collected packages: typing, moverscore
+
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+summ-eval 0.892 requires blanc, which is not installed.
+summ-eval 0.892 requires cython, which is not installed.
+summ-eval 0.892 requires pyemd==0.5.1, which is not installed.
+summ-eval 0.892 requires pytorch-pretrained-bert, which is not installed.
+summ-eval 0.892 requires sacremoses, which is not installed.
+summ-eval 0.892 requires stanza, which is not installed.
+Successfully installed moverscore-1.0.3 typing-3.7.4.3

@@ -1,0 +1,7 @@
+summaries scored: 1600 | runtime s: 10
+systems: 16
+metric	dim	tau_11ref	paper
+cider	coherence	0.2000	0.1176
+cider	consistency	-0.2667	-0.1912
+cider	fluency	-0.0921	-0.0221
+cider	relevance	-0.0333	0.1912

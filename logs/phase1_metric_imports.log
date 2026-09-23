@@ -1,0 +1,117 @@
+OK    bert_score_metric
+FAIL  blanc_metric                 ModuleNotFoundError: No module named 'blanc'
+OK    bleu_metric
+OK    chrfpp_metric
+FAIL  cider_metric                 ModuleNotFoundError: No module named 'nltk'
+FAIL  data_stats_metric            ModuleNotFoundError: No module named 'spacy'
+FAIL  meteor_metric                ModuleNotFoundError: No module named 'psutil'
+OK    mover_score_metric
+Please run the following command and add it to your startup script: 
+ export ROUGE_HOME=/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval/ROUGE-1.5.5/
+Please also run this command: 
+ pip install -U  git+https://github.com/bheinzerling/pyrouge.git
+FAIL  rouge_metric                 SystemExit: None
+FAIL  rouge_we_metric              ModuleNotFoundError: No module named 'nltk'
+FAIL  s3_metric                    ModuleNotFoundError: No module named 'nltk'
+FAIL  sentence_movers_metric       ModuleNotFoundError: No module named 'spacy'
+FAIL  summa_qa_metric              ModuleNotFoundError: No module named 'spacy'
+FAIL  supert_metric                ModuleNotFoundError: No module named 'nltk'
+FAIL  syntactic_metric             ModuleNotFoundError: No module named 'stanza'
+--- after installing nltk, psutil ---
+OK    bert_score_metric
+FAIL  blanc_metric                 ModuleNotFoundError: No module named 'blanc'
+OK    bleu_metric
+OK    chrfpp_metric
+OK    cider_metric
+FAIL  data_stats_metric            ModuleNotFoundError: No module named 'spacy'
+Downloading the meteor jar
+OK    meteor_metric
+OK    mover_score_metric
+Please run the following command and add it to your startup script: 
+ export ROUGE_HOME=/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval/ROUGE-1.5.5/
+Please also run this command: 
+ pip install -U  git+https://github.com/bheinzerling/pyrouge.git
+FAIL  rouge_metric                 SystemExit: None
+FAIL  rouge_we_metric              ModuleNotFoundError: No module named 'scipy'
+FAIL  s3_metric                    ModuleNotFoundError: No module named 'scipy'
+FAIL  sentence_movers_metric       ModuleNotFoundError: No module named 'spacy'
+FAIL  summa_qa_metric              ModuleNotFoundError: No module named 'spacy'
+FAIL  supert_metric                ModuleNotFoundError: No module named 'sklearn'
+FAIL  syntactic_metric             ModuleNotFoundError: No module named 'stanza'
+Downloading the spacy en_core_web_sm model
+(don't worry, this will only happen once)
+Collecting en-core-web-sm==3.8.0
+  Downloading en_core_web_sm-3.8.0-py3-none-any.whl (12.8 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.8/12.8 MB 35.8 MB/s  0:00:00
+Installing collected packages: en-core-web-sm
+Successfully installed en-core-web-sm-3.8.0
+--- after installing scipy, scikit-learn, spacy ---
+OK    bert_score_metric
+FAIL  blanc_metric                 ModuleNotFoundError: No module named 'blanc'
+OK    bleu_metric
+OK    chrfpp_metric
+OK    cider_metric
+FAIL  data_stats_metric            NameError: name 'stderr' is not defined
+OK    meteor_metric
+OK    mover_score_metric
+Please run the following command and add it to your startup script: 
+ export ROUGE_HOME=/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval/ROUGE-1.5.5/
+Please also run this command: 
+ pip install -U  git+https://github.com/bheinzerling/pyrouge.git
+FAIL  rouge_metric                 SystemExit: None
+FAIL  rouge_we_metric              LookupError: 
+FAIL  s3_metric                    LookupError: 
+FAIL  sentence_movers_metric       ModuleNotFoundError: No module named 'wmd'
+[38;5;2m✔ Download and installation successful[0m
+You can now load the package via spacy.load('en_core_web_sm')
+OK    summa_qa_metric
+Please run the following command and add it to your startup script: 
+ export PYTHONPATH=$PYTHONPATH:/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval
+FAIL  supert_metric                SystemExit: None
+FAIL  syntactic_metric             ModuleNotFoundError: No module named 'stanza'
+--- after spacy model download ---
+OK    bert_score_metric
+FAIL  blanc_metric                 ModuleNotFoundError: No module named 'blanc'
+OK    bleu_metric
+OK    chrfpp_metric
+OK    cider_metric
+OK    data_stats_metric
+OK    meteor_metric
+OK    mover_score_metric
+Please run the following command and add it to your startup script: 
+ export ROUGE_HOME=/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval/ROUGE-1.5.5/
+Please also run this command: 
+ pip install -U  git+https://github.com/bheinzerling/pyrouge.git
+FAIL  rouge_metric                 SystemExit: None
+FAIL  rouge_we_metric              LookupError: ********************************************************************** | Resource 'stopwords' not found. | Please use the NLTK Downloader to obtain the resource: | >>> import nltk | >>> nltk.download('stopwords') | For more information see: https://www.nltk.org/data.html | Attempted to load 'corpora
+FAIL  s3_metric                    LookupError: ********************************************************************** | Resource 'stopwords' not found. | Please use the NLTK Downloader to obtain the resource: | >>> import nltk | >>> nltk.download('stopwords') | For more information see: https://www.nltk.org/data.html | Attempted to load 'corpora
+FAIL  sentence_movers_metric       ModuleNotFoundError: No module named 'wmd'
+OK    summa_qa_metric
+Please run the following command and add it to your startup script: 
+ export PYTHONPATH=$PYTHONPATH:/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval
+FAIL  supert_metric                SystemExit: None
+FAIL  syntactic_metric             ModuleNotFoundError: No module named 'stanza'
+--- after nltk data download ---
+OK    bert_score_metric
+FAIL  blanc_metric                 ModuleNotFoundError: No module named 'blanc'
+OK    bleu_metric
+OK    chrfpp_metric
+OK    cider_metric
+OK    data_stats_metric
+OK    meteor_metric
+OK    mover_score_metric
+Please run the following command and add it to your startup script: 
+ export ROUGE_HOME=/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval/ROUGE-1.5.5/
+Please also run this command: 
+ pip install -U  git+https://github.com/bheinzerling/pyrouge.git
+FAIL  rouge_metric                 SystemExit: None
+Downloading the embeddings; this may take a while
+FAIL  rouge_we_metric              ConnectTimeout: HTTPConnectionPool(host='u.cs.biu.ac.il', port=80): Max retries exceeded with url: /~yogo/data/syntemb/deps.words.bz2 (Caused by ConnectTimeoutError(<HTTPConnection(host='u.cs.biu.ac.il', port=80) at 0x7eb43b499550>, 'Connection to u.cs.biu.ac.il timed out. (connect timeout=None)'))
+Downloading the embeddings; this may take a while
+FAIL  s3_metric                    ConnectTimeout: HTTPConnectionPool(host='u.cs.biu.ac.il', port=80): Max retries exceeded with url: /~yogo/data/syntemb/deps.words.bz2 (Caused by ConnectTimeoutError(<HTTPConnection(host='u.cs.biu.ac.il', port=80) at 0x7eb43ab21610>, 'Connection to u.cs.biu.ac.il timed out. (connect timeout=None)'))
+FAIL  sentence_movers_metric       ModuleNotFoundError: No module named 'wmd'
+OK    summa_qa_metric
+Please run the following command and add it to your startup script: 
+ export PYTHONPATH=$PYTHONPATH:/home/vscode/summeval-env/lib/python3.12/site-packages/summ_eval
+FAIL  supert_metric                SystemExit: None
+FAIL  syntactic_metric             ModuleNotFoundError: No module named 'stanza'

@@ -1,0 +1,19 @@
+Collecting pyemd
+  Downloading pyemd-2.0.0-py3-none-any.whl.metadata (9.7 kB)
+Requirement already satisfied: numpy>=1.15.0 in /home/vscode/summeval-env/lib/python3.12/site-packages (from pyemd) (2.5.3)
+Collecting pot>=0.9.0 (from pyemd)
+  Downloading pot-0.9.7.post1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (44 kB)
+Requirement already satisfied: scipy>=1.6 in /home/vscode/summeval-env/lib/python3.12/site-packages (from pot>=0.9.0->pyemd) (1.18.1)
+Downloading pyemd-2.0.0-py3-none-any.whl (9.8 kB)
+Downloading pot-0.9.7.post1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (32.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 32.9/32.9 MB 32.6 MB/s  0:00:01
+Installing collected packages: pot, pyemd
+
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+summ-eval 0.892 requires blanc, which is not installed.
+summ-eval 0.892 requires cython, which is not installed.
+summ-eval 0.892 requires pytorch-pretrained-bert, which is not installed.
+summ-eval 0.892 requires sacremoses, which is not installed.
+summ-eval 0.892 requires stanza, which is not installed.
+summ-eval 0.892 requires pyemd==0.5.1, but you have pyemd 2.0.0 which is incompatible.
+Successfully installed pot-0.9.7.post1 pyemd-2.0.0

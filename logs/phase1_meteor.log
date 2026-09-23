@@ -1,0 +1,7 @@
+summaries scored: 1600 | runtime s: 35
+systems: 16
+metric	dim	tau_11ref	paper
+meteor	coherence	0.2833	0.2353
+meteor	consistency	0.6500	0.6324
+meteor	fluency	0.6109	0.6126
+meteor	relevance	0.5500	0.4265
