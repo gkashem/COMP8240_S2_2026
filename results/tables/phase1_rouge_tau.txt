@@ -1,0 +1,15 @@
+summaries: 1600   systems: 16
+
+metric  dimension      tau ref0  tau 11ref    paper
+rouge1  coherence        0.2500     0.3667   0.2500
+rouge1  consistency      0.0500     0.3000   0.5294
+rouge1  fluency          0.3264     0.4770   0.5240
+rouge1  relevance        0.4833     0.5667   0.4118
+rouge2  coherence        0.2500     0.2500   0.1618
+rouge2  consistency      0.0500     0.1833   0.5882
+rouge2  fluency          0.3264     0.4603   0.4797
+rouge2  relevance        0.4500     0.4833   0.2941
+rougeL  coherence        0.1833     0.3833   0.0735
+rougeL  consistency     -0.1500     0.0833   0.1471
+rougeL  fluency          0.1925     0.3598   0.2583
+rougeL  relevance        0.3167     0.4833   0.2353

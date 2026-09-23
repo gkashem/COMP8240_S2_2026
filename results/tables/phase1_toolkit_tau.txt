@@ -1,0 +1,11 @@
+summaries: 1600   systems: 16   references: 11
+
+metric  dimension      tau 11ref    paper
+chrf    coherence         0.3333   0.3971
+chrf    consistency       0.4667   0.5294
+chrf    fluency           0.5439   0.4649
+chrf    relevance         0.5333   0.5882
+bleu    coherence         0.3833   0.1176
+bleu    consistency      -0.0500   0.0735
+bleu    fluency           0.2259   0.3321
+bleu    relevance         0.2833   0.2206
