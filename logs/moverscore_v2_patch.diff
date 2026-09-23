@@ -1,0 +1,91 @@
+--- /home/vscode/summeval-env/lib/python3.12/site-packages/moverscore_v2.py.bak	2026-09-23 06:41:30.565084140 +0000
++++ /home/vscode/summeval-env/lib/python3.12/site-packages/moverscore_v2.py	2026-09-23 07:13:16.003172471 +0000
+@@ -12,9 +12,9 @@
+ from functools import partial
+ 
+ 
+-from transformers import *
++from transformers import DistilBertConfig, DistilBertTokenizer, DistilBertModel
+ model_name = 'distilbert-base-uncased'
+-device = 'cuda:0'
++device = 'cpu'
+ config = DistilBertConfig.from_pretrained(model_name, output_hidden_states=True, output_attentions=True)
+ tokenizer = DistilBertTokenizer.from_pretrained(model_name, do_lower_case=True)
+ model = DistilBertModel.from_pretrained(model_name, config=config)
+@@ -22,8 +22,8 @@
+ model.to(device) 
+                 
+ def truncate(tokens):
+-    if len(tokens) > tokenizer.max_len - 2:
+-        tokens = tokens[0:(tokenizer.max_len - 2)]
++    if len(tokens) > tokenizer.model_max_length - 2:
++        tokens = tokens[0:(tokenizer.model_max_length - 2)]
+     return tokens
+ 
+ def process(a):
+@@ -58,14 +58,14 @@
+ def bert_encode(model, x, attention_mask):
+     model.eval()
+     with torch.no_grad():
+-        output, x_encoded_layers, _ = model(input_ids = x, attention_mask = attention_mask)
++        x_encoded_layers = model(input_ids = x, attention_mask = attention_mask, return_dict=False)[1]
+     return x_encoded_layers
+ 
+ #with open('stopwords.txt', 'r', encoding='utf-8') as f:
+ #    stop_words = set(f.read().strip().split(' '))
+          
+ def collate_idf(arr, tokenize, numericalize, idf_dict,
+-                pad="[PAD]", device='cuda:0'):
++                pad="[PAD]", device='cpu'):
+     
+     tokens = [["[CLS]"]+truncate(tokenize(a))+["[SEP]"] for a in arr]  
+     arr = [numericalize(a) for a in tokens]
+@@ -83,7 +83,7 @@
+     return padded, padded_idf, lens, mask, tokens
+ 
+ def get_bert_embedding(all_sens, model, tokenizer, idf_dict,
+-                       batch_size=-1, device='cuda:0'):
++                       batch_size=-1, device='cpu'):
+ 
+     padded_sens, padded_idf, lens, mask, tokens = collate_idf(all_sens,
+                                                       tokenizer.tokenize, tokenizer.convert_tokens_to_ids,
+@@ -118,7 +118,7 @@
+     ).add_(x1_norm).clamp_min_(1e-30).sqrt_()
+     return res
+ 
+-def word_mover_score(refs, hyps, idf_dict_ref, idf_dict_hyp, stop_words=[], n_gram=1, remove_subwords = True, batch_size=256, device='cuda:0'):
++def word_mover_score(refs, hyps, idf_dict_ref, idf_dict_hyp, stop_words=[], n_gram=1, remove_subwords = True, batch_size=256, device='cpu'):
+     preds = []
+     for batch_start in range(0, len(refs), batch_size):
+         batch_refs = refs[batch_start:batch_start+batch_size]
+@@ -154,8 +154,8 @@
+         distance_matrix = batched_cdist_l2(raw, raw).double().cpu().numpy()
+                 
+         for i in range(batch_size):  
+-            c1 = np.zeros(raw.shape[1], dtype=np.float)
+-            c2 = np.zeros(raw.shape[1], dtype=np.float)
++            c1 = np.zeros(raw.shape[1], dtype=np.float64)
++            c2 = np.zeros(raw.shape[1], dtype=np.float64)
+             c1[:len(ref_idf[i])] = ref_idf[i]
+             c2[len(ref_idf[i]):] = hyp_idf[i]
+             
+@@ -172,7 +172,7 @@
+ 
+ import matplotlib.pyplot as plt
+ 
+-def plot_example(is_flow, reference, translation, device='cuda:0'):
++def plot_example(is_flow, reference, translation, device='cpu'):
+     
+     idf_dict_ref = defaultdict(lambda: 1.) 
+     idf_dict_hyp = defaultdict(lambda: 1.)
+@@ -195,8 +195,8 @@
+ 
+     
+     i = 0
+-    c1 = np.zeros(raw.shape[1], dtype=np.float)
+-    c2 = np.zeros(raw.shape[1], dtype=np.float)
++    c1 = np.zeros(raw.shape[1], dtype=np.float64)
++    c2 = np.zeros(raw.shape[1], dtype=np.float64)
+     c1[:len(ref_idf[i])] = ref_idf[i]
+     c2[len(ref_idf[i]):] = hyp_idf[i]
+     
