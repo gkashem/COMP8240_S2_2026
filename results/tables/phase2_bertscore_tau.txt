@@ -1,0 +1,5 @@
+summaries: 2400 | systems: 24 | references: 1
+metric	tau_litepyramid
+bertscore_p	0.0145
+bertscore_r	0.7464
+bertscore_f	0.3188
