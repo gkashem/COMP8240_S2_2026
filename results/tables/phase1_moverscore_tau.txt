@@ -1,0 +1,6 @@
+systems: 16
+metric	dim	tau_11ref	paper
+moverscore	coherence	0.0167	0.1912
+moverscore	consistency	0.1167	-0.0294
+moverscore	fluency	0.1590	0.2583
+moverscore	relevance	0.2833	0.2941
