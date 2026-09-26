@@ -26,7 +26,7 @@ extends the number of metrics evaluated. Any metric that cannot be run will be d
 | BERTScore-F | coh / con / flu / rel | 0.1333 / 0.0333 / 0.2762 / 0.4000 | 0.2059 / 0.0441 / 0.2435 / 0.4265 | phase1_bertscore.py |
 | METEOR | coh / con / flu / rel | 0.2833 / 0.6500 / 0.6109 / 0.5500 | 0.2353 / 0.6324 / 0.6126 / 0.4265 | phase1_meteor.py |
 | CIDEr | coh / con / flu / rel | 0.2000 / -0.2667 / -0.0921 / -0.0333 | 0.1176 / -0.1912 / -0.0221 / 0.1912 | phase1_cider.py |
-| MoverScore | coh / con / flu / rel | PENDING (run in progress) | 0.1912 / -0.0294 / 0.2583 / 0.2941 | phase1_moverscore.py |
+| MoverScore | coh / con / flu / rel | 0.0167 / 0.1167 / 0.1590 / 0.2833 | 0.1912 / -0.0294 / 0.2583 / 0.2941 | phase1_moverscore.py |
 
 Tables: `results/tables/phase1_*_tau.txt`. Per-summary scores: `results/scores/*.jsonl`.
 Reproduced qualitative finding (proposal §2.2): BERTScore recall vs precision split on consistency.
@@ -39,7 +39,7 @@ Reproduced qualitative finding (proposal §2.2): BERTScore recall vs precision s
 | BERTScore P/R/F | Run | `bert_score` with toolkit defaults (bert-base-uncased, layer 8, no idf, no rescale). |
 | METEOR | Run | Fixed: `data/paraphrase-en.gz` missing from toolkit install; downloaded from Maluuba/nlg-eval. |
 | CIDEr | Run | One batch over all 1,600 (IDF needs the full set). |
-| MoverScore | Running | Installed `moverscore`, `pyemd` (unpinned 2.0.0); `stopwords.txt` fetched from Yale-LILY/SummEval; `moverscore_v2.py` patched (CPU, transformers/numpy API changes) — `logs/moverscore_v2_patch.diff`. |
+| MoverScore | Run, all 1,600 summaries (CPU, 3,240 s) | Installed `moverscore`, `pyemd` (unpinned 2.0.0); `stopwords.txt` fetched from Yale-LILY/SummEval; `moverscore_v2.py` patched (CPU, transformers/numpy API changes) — `logs/moverscore_v2_patch.diff`. |
 | ROUGE-WE, S3 | Not run | Hard-coded embedding download (u.cs.biu.ac.il) times out. |
 | SMS | Not run | `wmd` module missing. |
 | SummaQA, BLANC, SUPERT, data stats | Deferred | Need source articles, not in the released jsonl (proposal §4 risk). |
