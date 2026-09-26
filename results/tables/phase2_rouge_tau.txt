@@ -1,0 +1,5 @@
+summaries: 2400 | systems: 24
+metric	tau_litepyramid
+rouge1	0.3261
+rouge2	0.2899
+rougeL	0.1159
