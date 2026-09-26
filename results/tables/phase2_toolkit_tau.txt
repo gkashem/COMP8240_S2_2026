@@ -1,0 +1,4 @@
+summaries: 2400 | systems: 24 | references: 1
+metric	tau_litepyramid
+chrf	0.7246
+bleu	0.0435
