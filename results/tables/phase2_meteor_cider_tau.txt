@@ -1,0 +1,4 @@
+summaries: 2400 | systems: 24 | references: 1
+metric	tau_litepyramid
+meteor	0.8406
+cider	-0.4203
