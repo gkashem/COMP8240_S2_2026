@@ -1,0 +1,8 @@
+nohup: ignoring input
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[transformers] Please make sure the generation config includes `forced_bos_token_id=0`. 
+Loading weights:   0%|          | 0/511 [00:00<?, ?it/s]Loading weights:  19%|█▉        | 97/511 [00:00<00:00, 949.50it/s]Loading weights:  47%|████▋     | 240/511 [00:00<00:00, 1224.57it/s]Loading weights:  71%|███████   | 363/511 [00:00<00:00, 1158.49it/s]Loading weights: 100%|██████████| 511/511 [00:00<00:00, 1383.09it/s]
+bart_large_cnn: 30 docs in 701 s | example: Reinforcement Learning (RL) has emerged as one of the pivotal approaches for achieving artificial general intelligence (AGI) Despite significant advan
+Loading weights:   0%|          | 0/262 [00:00<?, ?it/s]Loading weights: 100%|██████████| 262/262 [00:00<00:00, 29672.94it/s]
+distilbart_cnn_6_6: 30 docs in 928 s | example: Reinforcement Learning (RL) has emerged as one of the pivotal approaches for achieving artificial general intelligence (AGI) Despite significant advan
+total summaries: 120
