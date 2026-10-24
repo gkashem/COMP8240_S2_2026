@@ -1,4 +1,4 @@
-"""Phase 4: LLM judge (Qwen2.5-3B-Instruct Q4_K_M, llama.cpp) scores SummEval summaries 1-5.
+"""Phase 4: LLM judge (Qwen3-4B Q4_K_M, llama.cpp) scores SummEval summaries 1-5.
 One call per dimension; SummEval definitions; short reasoning then score as JSON; resumable."""
 import argparse, json, os, random, time
 from llama_cpp import Llama
