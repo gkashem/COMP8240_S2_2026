@@ -262,3 +262,6 @@ report/*.bbl
 report/*.blg
 report/*.synctex.gz
 data/external/
+models/
+data/raw/cnndm/
+data/processed/summeval_sources.jsonl
