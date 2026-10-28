@@ -35,7 +35,9 @@ for l in open('data/raw/model_annotations.aligned.jsonl'):
         expert[(r['id'], r['model_id'], dim)] = statistics.mean(a[dim] for a in r['expert_annotations'])
 
 docs = sorted({k[0] for k in judge}); systems = sorted({k[1] for k in judge})
-print(f"calls: {len(rows)}   parse failures: {sum(x['score'] is None for x in rows)}")
+keys = {(x['id'], x['model_id'], x['dim'], x['run']) for x in rows}
+unres = len(keys - {k + (run,) for k, v in judge.items() for run in v})
+print(f"calls: {len(rows)}   parse failures: {sum(x['score'] is None for x in rows)}   unresolved after retry: {unres}")
 print(f"articles: {len(docs)}   systems: {len(systems)}   runs per item: {dict(Counter(len(v) for v in judge.values()))}")
 
 multi = {k: v for k, v in judge.items() if len(v) >= 2}

@@ -31,6 +31,8 @@ ap.add_argument('--seed', type=int, default=8240)
 ap.add_argument('--out', required=True)
 ap.add_argument('--model', default='models/Qwen3-4B-Q4_K_M.gguf')
 ap.add_argument('--think', action='store_true')
+ap.add_argument('--max_tokens', type=int, default=80)
+ap.add_argument('--retry_failed', action='store_true', help='only re-run calls that have no valid score yet')
 args = ap.parse_args()
 
 recs = [json.loads(l) for l in open('data/raw/model_annotations.aligned.jsonl')]
@@ -41,10 +43,13 @@ for r in recs:
 rng = random.Random(args.seed)
 docs = sorted(by_doc); rng.shuffle(docs); docs = docs[:args.docs]
 
-done = set()
+done, seen = set(), set()
 if os.path.exists(args.out):
     for l in open(args.out):
-        x = json.loads(l); done.add((x['id'], x['model_id'], x['dim'], x['run']))
+        x = json.loads(l); key = (x['id'], x['model_id'], x['dim'], x['run']); seen.add(key)
+        if x['score'] is not None or not args.retry_failed: done.add(key)
+todo = seen - done if args.retry_failed else None
+if args.retry_failed: print('to retry:', len(todo), flush=True)
 print('already done:', len(done), flush=True)
 
 llm = Llama(model_path=args.model, n_ctx=2048, n_threads=2, seed=args.seed, verbose=False)
@@ -58,11 +63,13 @@ with open(args.out, 'a') as out:
                 for k in range(args.repeats):
                     if (d, r['model_id'], dim, k) in done:
                         continue
+                    if todo is not None and (d, r['model_id'], dim, k) not in todo:
+                        continue
                     t = time.time()
                     res = llm.create_chat_completion(
                         messages=[{'role': 'system', 'content': SYSTEM},
                                   {'role': 'user', 'content': prompt(src[d], r['decoded'], dim) + ('' if args.think else ' /no_think')}],
-                        response_format=SCHEMA, max_tokens=80, temperature=args.temp, seed=args.seed + k)
+                        response_format=SCHEMA, max_tokens=args.max_tokens, temperature=args.temp, seed=args.seed + k)
                     txt = res['choices'][0]['message']['content']
                     try:
                         j = json.loads(txt); score, reason = int(j['score']), j['reasoning']
@@ -72,7 +79,7 @@ with open(args.out, 'a') as out:
                     expert = sum(a[dim] for a in r['expert_annotations']) / 3
                     rec = {'id': d, 'model_id': r['model_id'], 'dim': dim, 'run': k, 'score': score,
                            'reasoning': reason, 'raw': txt, 'prompt_tokens': res['usage']['prompt_tokens'],
-                           'completion_tokens': res['usage']['completion_tokens'], 'sec': round(sec, 1)}
+                           'completion_tokens': res['usage']['completion_tokens'], 'max_tokens': args.max_tokens, 'sec': round(sec, 1)}
                     out.write(json.dumps(rec) + '\n'); out.flush(); n += 1
                     print(d[:16], r['model_id'], dim, k, score, f'expert={expert:.2f}',
                           f"gen={rec['completion_tokens']}", f'{sec:.1f}s', flush=True)
