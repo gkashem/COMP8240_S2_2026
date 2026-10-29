@@ -22,7 +22,17 @@ def prompt(src, summ, dim):
             f'First explain your judgement of the summary\'s {dim} in one short sentence (at most 25 words), '
             f'then give a score from 1 to 5. Respond in JSON: {{"reasoning": "...", "score": <1-5>}}')
 
+SYSTEM3 = 'You will be given a document and a summary of it. Rate the summary on one quality dimension, from 1 (worst) to 5 (best).'
+
+def prompt3(src, summ, dim):  # Phase 3 corpus: summaries not lowercased; sources not news
+    return (f'Source document:\n{src}\n\nSummary:\n{summ}\n\n'
+            f'Evaluation criterion:\n{DEFS[dim]}\n\n'
+            f'Judge only {dim}; ignore all other qualities.\n\n'
+            f'First explain your judgement of the summary\'s {dim} in one short sentence (at most 25 words), '
+            f'then give a score from 1 to 5. Respond in JSON: {{"reasoning": "...", "score": <1-5>}}')
+
 ap = argparse.ArgumentParser()
+ap.add_argument('--data', choices=['summeval', 'phase3'], default='summeval')
 ap.add_argument('--docs', type=int, default=50)
 ap.add_argument('--per_doc', type=int, default=16)
 ap.add_argument('--repeats', type=int, default=1)
@@ -35,8 +45,12 @@ ap.add_argument('--max_tokens', type=int, default=80)
 ap.add_argument('--retry_failed', action='store_true', help='only re-run calls that have no valid score yet')
 args = ap.parse_args()
 
-recs = [json.loads(l) for l in open('data/raw/model_annotations.aligned.jsonl')]
-src = {json.loads(l)['id']: json.loads(l)['text'] for l in open('data/processed/summeval_sources.jsonl')}
+if args.data == 'summeval':
+    recs = [json.loads(l) for l in open('data/raw/model_annotations.aligned.jsonl')]
+    src = {json.loads(l)['id']: json.loads(l)['text'] for l in open('data/processed/summeval_sources.jsonl')}
+else:
+    recs = [json.loads(l) for l in open('data/processed/phase3_summaries.jsonl')]
+    src = {json.loads(l)['id']: json.loads(l)['source'] for l in open('data/processed/phase3_docs.jsonl')}
 by_doc = {}
 for r in recs:
     by_doc.setdefault(r['id'], []).append(r)
@@ -67,8 +81,8 @@ with open(args.out, 'a') as out:
                         continue
                     t = time.time()
                     res = llm.create_chat_completion(
-                        messages=[{'role': 'system', 'content': SYSTEM},
-                                  {'role': 'user', 'content': prompt(src[d], r['decoded'], dim) + ('' if args.think else ' /no_think')}],
+                        messages=[{'role': 'system', 'content': SYSTEM if args.data == 'summeval' else SYSTEM3},
+                                  {'role': 'user', 'content': (prompt if args.data == 'summeval' else prompt3)(src[d], r['decoded'], dim) + ('' if args.think else ' /no_think')}],
                         response_format=SCHEMA, max_tokens=args.max_tokens, temperature=args.temp, seed=args.seed + k)
                     txt = res['choices'][0]['message']['content']
                     try:
@@ -76,7 +90,7 @@ with open(args.out, 'a') as out:
                     except Exception:
                         score, reason = None, None
                     sec = time.time() - t
-                    expert = sum(a[dim] for a in r['expert_annotations']) / 3
+                    expert = sum(a[dim] for a in r['expert_annotations']) / 3 if 'expert_annotations' in r else float('nan')
                     rec = {'id': d, 'model_id': r['model_id'], 'dim': dim, 'run': k, 'score': score,
                            'reasoning': reason, 'raw': txt, 'prompt_tokens': res['usage']['prompt_tokens'],
                            'completion_tokens': res['usage']['completion_tokens'], 'max_tokens': args.max_tokens, 'sec': round(sec, 1)}
