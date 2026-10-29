@@ -1,0 +1,35 @@
+articles: 50   summaries: 800   systems: 16   judge = run 0
+
+dimension    metric         system tau  summary tau
+coherence    judge              0.4576       0.2544
+coherence    rouge1 ref0        0.2353       0.0987
+coherence    rouge1 11ref       0.4370       0.1578
+coherence    rouge2 ref0        0.2521       0.0694
+coherence    rouge2 11ref       0.3361       0.1424
+coherence    rougeL ref0        0.2521       0.1131
+coherence    rougeL 11ref       0.3866       0.1947
+
+consistency  judge              0.4915       0.3013
+consistency  rouge1 ref0        0.2185       0.1678
+consistency  rouge1 11ref       0.3530       0.1946
+consistency  rouge2 ref0        0.1849       0.1869
+consistency  rouge2 11ref       0.3530       0.2092
+consistency  rougeL ref0        0.1177       0.1487
+consistency  rougeL 11ref       0.2521       0.1995
+
+fluency      judge              0.6891       0.4736
+fluency      rouge1 ref0        0.1255       0.1055
+fluency      rouge1 11ref       0.3264       0.1159
+fluency      rouge2 ref0        0.1757       0.1140
+fluency      rouge2 11ref       0.2762       0.1431
+fluency      rougeL ref0        0.2092       0.1134
+fluency      rougeL 11ref       0.3096       0.1544
+
+relevance    judge              0.7395       0.2838
+relevance    rouge1 ref0        0.3866       0.2062
+relevance    rouge1 11ref       0.5546       0.2421
+relevance    rouge2 ref0        0.3698       0.1376
+relevance    rouge2 11ref       0.4538       0.1766
+relevance    rougeL ref0        0.2353       0.1617
+relevance    rougeL 11ref       0.3866       0.2196
+

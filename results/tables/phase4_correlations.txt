@@ -1,0 +1,23 @@
+calls: 3648   parse failures: 65   unresolved after retry: 1
+articles: 50   systems: 16   runs per item: {3: 192, 1: 3007}
+
+run-to-run variation (items with >=2 runs)
+dimension     items  all runs equal  mean SD
+coherence        48            0.69    0.157
+consistency      48            0.83    0.105
+fluency          48            0.79    0.118
+relevance        48            0.56    0.245
+
+judge score = run0
+dimension     system tau  summary tau  articles
+coherence         0.4576       0.2544        50
+consistency       0.4915       0.3013        45
+fluency           0.6891       0.4736        49
+relevance         0.7395       0.2838        50
+
+judge score = mean
+dimension     system tau  summary tau  articles
+coherence         0.4538       0.2540        50
+consistency       0.4874       0.3014        46
+fluency           0.6723       0.4721        49
+relevance         0.7563       0.2876        50
