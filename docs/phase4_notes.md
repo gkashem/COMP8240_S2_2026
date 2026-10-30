@@ -40,7 +40,19 @@ The judge is highest on every dimension at both levels. No significance test; sy
 Not comparable directly with SummEval Table 2 (100 articles).
 
 ## Phase 3 corpus results
-To be added (`scripts/phase4_compare_phase3.py`, `results/tables/phase4_phase3_judge.txt`).
+Judge vs the annotator's first-pass ratings, same method as `scripts/phase3_correlations.py` (`scripts/phase4_compare_phase3.py`, `results/tables/phase4_phase3_judge.txt`). 600 calls; 15 hit the 80-token cap and were re-run with 160; all 600 valid. Two calls were written twice when two processes briefly ran together; the duplicates were removed (first copy kept).
+
+| dimension | judge system | best metric system | judge summary | best metric summary |
+|---|---|---|---|---|
+| coherence | 0.600 | 0.400 (R-2, chrF, BLEU, CIDEr) | 0.427 | 0.323 (CIDEr) |
+| consistency | 1.000 | 0.800 (chrF) | 0.504 | 0.323 (chrF) |
+| fluency | 0.738 | 0.800 (R-2, BLEU) | 0.435 | 0.241 (BERTScore-R) |
+| relevance | 0.316 | 0.800 (R-1, R-L, BERTScore-R/F, METEOR, MoverScore) | 0.270 | 0.533 (chrF) |
+
+- The judge has the highest summary-level tau on coherence, consistency and fluency; on relevance most metrics are higher at both levels.
+- The judge rates relevance higher than the annotator (annotator: 83 of 150 items scored 2; judge: 2:34, 3:43, 4:41, 5:28).
+- Consistency summary-level tau is defined for only 15 of 30 documents (126 of 150 annotator consistency ratings are 5).
+- Caveats: system level rests on 5 systems; a single annotator whose relevance intra-annotator alpha (0.508) is below the 0.67 threshold.
 
 ## Known limitations of the judge
 - Coarse 1-5 integer scale; ties are common.
