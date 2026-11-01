@@ -1,0 +1,569 @@
+\documentclass[11pt]{article}
+
+\usepackage[preprint]{acl}
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{array}
+\usepackage{tabularx}
+
+\title{Reproducing \textsc{SummEval}: Re-evaluating Automatic Metrics for
+       Text Summarisation on New Data}
+
+\author{
+  Mohammed Golam Kashem (48728306)\\
+  Master of Data Science, COMP8240: Applications of Data Science \\
+  School of Computing, Macquarie University \\
+  \texttt{mohammedgolam.kashem@students.mq.edu.au} \\
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report replicates SummEval (Fabbri et al., 2021), a meta-evaluation of automatic summarisation metrics against expert human ratings, and tests whether its conclusions hold on new data. Using the authors' released annotations and toolkit on a CPU-only machine, I reproduced the system-level Kendall's $\tau$ of eleven metric variants. The mean absolute difference from the paper is 0.100: BERTScore, METEOR and CHRF are close, ROUGE and BLEU are not, and the paper's split between BERTScore recall and precision is reproduced. I then applied the same pipeline to RealSumm, an existing dataset with a different human protocol, and to a new corpus of 30 Wikipedia and arXiv documents with 150 summaries from five systems, which I annotated blind on the paper's four dimensions. Finally, a locally run LLM judge (Qwen3-4B) was validated against SummEval's experts, where its correlations with them were higher than ROUGE's on every dimension, and was then applied to the new corpus. Coherence remained poorly captured by overlap metrics on SummEval and on the new corpus, but which dimensions the metrics capture best changed with the domain. All scripts, data and annotations are public.
+\end{abstract}
+
+\section{Description of Paper, and Justification}
+\label{sec:paper}
+
+\paragraph{The paper.}
+\citet{fabbri-etal-2021-summeval} ask how well automatic metrics for text summarisation agree with human judgement.\footnote{\url{https://aclanthology.org/2021.tacl-1.24/}} The authors argue that progress in summarisation is held back by a lack of up-to-date studies of evaluation metrics and by a lack of consensus on evaluation protocols. They respond with five contributions: (1) they re-evaluate 14 automatic metrics against expert and crowd-sourced human ratings; (2) they benchmark 23 recent summarisation models with those metrics; (3) they release 44 aligned model outputs from 23 papers, all trained on CNN/DailyMail \citep{hermann-etal-2015-teaching,nallapati-etal-2016-abstractive}; (4) they release a toolkit that runs the 14 metrics through one interface; and (5) they release the human judgements collected for the study.\footnote{\url{https://github.com/Yale-LILY/SummEval}}
+
+\paragraph{Evaluation framework.}
+The paper is a meta-evaluation: the objects being evaluated are the metrics, not the summarisers. The authors randomly picked 100 articles from the CNN/DailyMail test set and collected a summary of each from 16 models, giving 1,600 summaries. Each summary was rated from 1 to 5 by three expert annotators and five crowd workers on four dimensions: \emph{coherence} (the collective quality of all sentences), \emph{consistency} (factual alignment with the source), \emph{fluency} (the quality of individual sentences) and \emph{relevance} (selection of important content). Agreement, measured with Krippendorff's $\alpha$ \citep{krippendorff-2011-computing}, was 0.4920 for crowd workers, 0.4132 for experts in a first round and 0.7127 after a second expert round. Averaged expert and crowd scores had a Pearson correlation close to zero, so the paper correlates metrics with expert ratings only. Figure~\ref{fig:summeval} (Section~\ref{sec:data}) shows one annotated summary.
+
+Each metric was computed against 11 references per article: the original CNN/DailyMail highlights and ten additional references from \citet{kryscinski-etal-2020-evaluating}. Correlation is measured at the system level \citep{louis-nenkova-2013-automatically}. Each system's metric scores and expert ratings are averaged over its summaries, and the two rankings of systems are compared with Kendall's $\tau$ \citep{kendall-1938-new}:
+\begin{equation}
+\tau = \frac{C - D}{\tfrac{1}{2}n(n-1)}
+\label{eq:tau}
+\end{equation}
+where $C$ and $D$ are the numbers of concordant and discordant pairs among $n$ systems. $\tau$ ranges from $-1$ (reversed ranking) to $+1$ (identical ranking).
+
+\paragraph{How well the metrics did.}
+Table~2 of the paper reports $\tau$ for every metric and dimension. Most metrics correlate least with coherence; across the eleven metric variants replicated in Section~\ref{sec:replication}, $\tau$ ranges from 0.0588 (BERTScore precision) to 0.3971 (CHRF). The authors explain this by the reliance of most metrics on subsequence alignment, which does not capture how consecutive sentences connect. Relevance is also low to moderate, from 0.1618 (BERTScore precision) to 0.5882 (CHRF), which the authors link to the subjectivity of the dimension. Correlations are much higher for consistency and fluency: ROUGE-3 reaches 0.7059 and BERTScore recall 0.6618 on consistency, and METEOR 0.6126 on fluency. The authors attribute the strong consistency result to the low abstractiveness of most neural models and to high expert agreement on these two dimensions. The metric variant also matters. On consistency, BERTScore recall reaches 0.6618 while BERTScore precision is $-0.1912$, and higher-order ROUGE correlates better than ROUGE-L on all four dimensions. The paper concludes that coherence and relevance are not reliably covered by the available metrics.
+
+\paragraph{Justification.}
+The paper appeared in \emph{Transactions of the Association for Computational Linguistics} (TACL), the journal of the Association for Computational Linguistics, published by MIT Press. In Google Scholar's Computational Linguistics venue ranking, TACL is fourth, with an h5-index of 96 and an h5-median of 204.\footnote{\url{https://scholar.google.com/citations?view_op=top_venues&hl=en&vq=eng_computationallinguistics}, retrieved 1 November 2026.} CORE does not rank TACL: its journal rankings were discontinued in February 2022, and TACL does not appear in the last (CORE2020) list.\footnote{\url{https://portal.core.edu.au/jnl-ranks/}, checked 1 November 2026.} The closest CORE indicator is the ACL conference, ranked A* (ICORE2026, Field of Research 4602, Artificial Intelligence),\footnote{\url{https://portal.core.edu.au/conf-ranks/196/}, retrieved 30 August 2026.} because accepted TACL papers are eligible for presentation at ACL, NAACL, EACL and EMNLP.\footnote{\url{https://www.transacl.org}, retrieved 1 November 2026.} The paper had 1,406 Google Scholar citations on 1 November 2026, up from 1,302 on 30 August 2026. Its code repository is released under the MIT licence; its last commit was on 15 August 2023. Finally, the paper suits a replication project: its most expensive parts, the 16 system outputs and 12,800 summary-level annotations (each with four dimension scores), are already public, so the meta-evaluation can be rerun on modest hardware and the same correlation method applied unchanged to new annotated data.
+
+\section{Description of the Original Dataset}
+\label{sec:data}
+
+The human judgements are released as a single JSON Lines file, \texttt{model\_\allowbreak annotations.\allowbreak aligned.\allowbreak jsonl} (5,839,062 bytes).\footnote{\url{https://storage.googleapis.com/sfr-summarization-repo-research/model_annotations.aligned.jsonl}} Each line holds one generated summary, so the file has 1,600 records: 100 CNN/DailyMail test articles, each summarised by 16 systems. Every record has seven fields (Figure~\ref{fig:summeval}). \texttt{id} identifies the article: a \texttt{dm-test-} or \texttt{cnn-test-} prefix followed by the SHA-1 hash of the article's URL, which is also the name of its story file. \texttt{model\_id} names the system, \texttt{filepath} gives the article's location in the CNN/DailyMail distribution, and \texttt{decoded} holds the generated summary. \texttt{references} is a list of 11 reference summaries: the original highlights plus ten from \citet{kryscinski-etal-2020-evaluating}. \texttt{expert\_annotations} holds three dictionaries, one per expert, each with an integer score from 1 to 5 for coherence, consistency, fluency and relevance. \texttt{turker\_annotations} holds five dictionaries of the same form, one per crowd worker.
+
+\begin{figure}[t]
+\footnotesize
+\begin{verbatim}
+{"id": "dm-test-8764fb95...2fb8d6b400eee2",
+ "model_id": "M11",
+ "filepath": "cnndm/dailymail/stories/
+              8764fb95...b400eee2.story",
+ "decoded": "paul merson was brought on with
+   only seven minutes remaining in his team 's
+   0-0 draw with burnley . andros townsend
+   scored the tottenham midfielder in the 89th
+   minute . ...",
+ "references": [
+   "Andros Townsend an 83rd minute sub in
+    Tottenham's draw with Burnley. ...", ...],
+ "expert_annotations": [
+   {"coherence": 2, "consistency": 1,
+    "fluency": 4, "relevance": 2},
+   {"coherence": 1, "consistency": 1,
+    "fluency": 2, "relevance": 1},
+   {"coherence": 1, "consistency": 1,
+    "fluency": 3, "relevance": 2}],
+ "turker_annotations": [
+   {"coherence": 3, "consistency": 3,
+    "fluency": 4, "relevance": 3}, ...]}
+\end{verbatim}
+\caption{The first record of the SummEval annotation file, reformatted and trimmed. Long strings are cut (\texttt{...}); the file holds 11 references and 5 crowd ratings per summary, of which only the first is shown.}
+\label{fig:summeval}
+\end{figure}
+
+The record in Figure~\ref{fig:summeval} shows two properties of the data that matter for replication. First, the summary text is not uniformly preprocessed: this output is lowercased and tokenised (\texttt{team 's}), as are those of M17, whereas M20's outputs are truecased with normal punctuation. Second, it illustrates the gap between expert and crowd ratings reported in Section~\ref{sec:paper}. The summary claims that Townsend ``scored the tottenham midfielder'', which the source does not support; all three experts give it consistency 1, while the first crowd worker gives 3.
+
+The article texts themselves are not included; only their file paths are. Metrics that need the source document, and the LLM judge in Section~\ref{sec:results}, therefore required the articles to be rebuilt. I matched all 100 identifiers to the CNN/DailyMail 3.0.0 test split on Hugging Face by their SHA-1 hash, and all 100 were found.
+
+\section{Replication of Original Work}
+\label{sec:replication}
+
+All scripts, results, per-summary scores and notes for this project are in a public repository.\footnote{\url{https://github.com/gkashem/COMP8240_S2_2026}}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{@{}l rr rr rr rr r@{}}
+\toprule
+& \multicolumn{2}{c}{Coherence} & \multicolumn{2}{c}{Consistency} & \multicolumn{2}{c}{Fluency} & \multicolumn{2}{c}{Relevance} & \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+Metric & Ours & Paper & Ours & Paper & Ours & Paper & Ours & Paper & Mean $|\Delta|$ \\
+\midrule
+ROUGE-1 & 0.3667 & 0.2500 & 0.3000 & 0.5294 & 0.4770 & 0.5240 & 0.5667 & 0.4118 & 0.137 \\
+ROUGE-2 & 0.2500 & 0.1618 & 0.1833 & 0.5882 & 0.4603 & 0.4797 & 0.4833 & 0.2941 & 0.175 \\
+ROUGE-L & 0.3833 & 0.0735 & 0.0833 & 0.1471 & 0.3598 & 0.2583 & 0.4833 & 0.2353 & 0.181 \\
+CHRF & 0.3333 & 0.3971 & 0.4667 & 0.5294 & 0.5439 & 0.4649 & 0.5333 & 0.5882 & 0.065 \\
+BLEU & 0.3833 & 0.1176 & $-$0.0500 & 0.0735 & 0.2259 & 0.3321 & 0.2833 & 0.2206 & 0.140 \\
+BERTScore-P & $-$0.0167 & 0.0588 & $-$0.2167 & $-$0.1912 & 0.0251 & 0.0074 & 0.0833 & 0.1618 & 0.049 \\
+BERTScore-R & 0.2000 & 0.1471 & 0.6667 & 0.6618 & 0.4937 & 0.4945 & 0.4333 & 0.3088 & 0.046 \\
+BERTScore-F & 0.1333 & 0.2059 & 0.0333 & 0.0441 & 0.2762 & 0.2435 & 0.4000 & 0.4265 & 0.036 \\
+METEOR & 0.2833 & 0.2353 & 0.6500 & 0.6324 & 0.6109 & 0.6126 & 0.5500 & 0.4265 & 0.048 \\
+CIDEr & 0.2000 & 0.1176 & $-$0.2667 & $-$0.1912 & $-$0.0921 & $-$0.0221 & $-$0.0333 & 0.1912 & 0.113 \\
+MoverScore & 0.0167 & 0.1912 & 0.1167 & $-$0.0294 & 0.1590 & 0.2583 & 0.2833 & 0.2941 & 0.108 \\
+\midrule
+Mean $|\Delta|$ & \multicolumn{2}{c}{0.123} & \multicolumn{2}{c}{0.106} & \multicolumn{2}{c}{0.052} & \multicolumn{2}{c}{0.118} & 0.100 \\
+\bottomrule
+\end{tabular}
+\caption{System-level Kendall's $\tau$ between each metric and the mean expert rating (16 systems, 11 references): our replication against Table~2 of \citet{fabbri-etal-2021-summeval}. $|\Delta|$ is the absolute difference between the two values.}
+\label{tab:replication}
+\end{table*}
+
+\paragraph{Environment.}
+The work ran in a GitHub Codespace without a GPU (Table~\ref{tab:env}). The documented installation of the authors' toolkit, \texttt{summ-eval}, failed because it pins dependency versions from 2020. I therefore installed it without dependencies (\texttt{--no-deps}) in a dedicated virtual environment and added the packages each metric needed, unpinned. ROUGE was computed in the system Python with Google's \texttt{rouge-score}, because the toolkit's ROUGE wraps the Perl ROUGE-1.5.5 package, which did not install. This substitution was declared in the proposal.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Component & Version or setting \\
+\midrule
+Platform & GitHub Codespace, Debian 13 \\
+Hardware & 2 CPU cores, no GPU \\
+Python & 3.12.3 \\
+\texttt{summ-eval} & 0.892 (\texttt{--no-deps}) \\
+\texttt{sacrebleu} & 1.4.14 \\
+\texttt{bert-score} & 0.3.12 (now 0.3.13) \\
+\texttt{transformers} & 5.17.0 \\
+\texttt{torch} & 2.14.0+cpu \\
+\texttt{moverscore} & 1.0.3 (patched) \\
+\texttt{rouge-score} & 0.1.2 \\
+Java (METEOR) & OpenJDK 21.0.12.1 \\
+\bottomrule
+\end{tabular}
+\caption{Replication environment. BERTScore was run under version 0.3.12; the environment was later upgraded to 0.3.13.}
+\label{tab:env}
+\end{table}
+
+\paragraph{Metrics run.}
+Eleven metric variants were run: ROUGE-1, ROUGE-2 and ROUGE-L \citep{lin-2004-rouge}, CHRF \citep{popovic-2015-chrf}, BLEU \citep{papineni-etal-2002-bleu}, BERTScore precision, recall and F1 \citep{zhang-etal-2020-bertscore}, METEOR \citep{denkowski-lavie-2014-meteor}, CIDEr \citep{vedantam-etal-2015-cider} and MoverScore \citep{zhao-etal-2019-moverscore}. Three needed fixes. METEOR failed until a paraphrase table missing from the toolkit installation was added. MoverScore needed its source patched to run on a CPU with current \texttt{transformers} and \texttt{numpy} versions (the patch is in the repository), and then took 3,240\,s for all 1,600 summaries. CIDEr was computed in one batch, because its IDF weights need the whole set. Seven metrics were not run. ROUGE-WE and S3 download embeddings from a hard-coded address that timed out, and SMS needs a module that could not be installed. SummaQA, BLANC, SUPERT and the data statistics need the source articles, which are not in the released file (Section~\ref{sec:data}). The articles were rebuilt later for the LLM judge, but these four metrics were then left out for reasons of time and scope. This is the ``justified subset'' the proposal allowed for. Two smaller proposal commitments were not carried out in this phase: text was not normalised beyond each library's own tokeniser, and summary-level correlation on SummEval was computed only for the LLM-judge comparison (Section~\ref{sec:results}).
+
+\paragraph{Procedure.}
+For each summary, the three expert ratings were averaged per dimension, and each metric was scored against all 11 references. Both were then averaged over each system's 100 summaries, and the 16 system means were compared with Kendall's $\tau$ (Equation~\ref{eq:tau}), using one hand-written function shared by every script. Several details are not stated in the paper and are my assumptions. For ROUGE, the 11 references are combined by taking the maximum F1. BERTScore uses its built-in multi-reference mode. CHRF, BLEU and METEOR use the toolkit's per-example function, and CIDEr and MoverScore its batch function. Toolkit default settings are assumed to be the paper's. I use the $\tau$-b variant, which equals $\tau$-a here because no two of our 16 systems tie. Per-summary scores are saved before aggregation (Appendix~\ref{app:scores}).
+
+\paragraph{Results and how close they are.}
+Table~\ref{tab:replication} compares the 44 replicated values with the paper's. None matches exactly. The mean absolute difference is 0.100 and the median 0.076; 13 values are within 0.05 and 28 within 0.10. The largest gap is ROUGE-2 on consistency (0.1833 against 0.5882). Four values change sign: BLEU and MoverScore on consistency, BERTScore precision on coherence, and CIDEr on relevance; all but the last involve a value close to zero. Agreement depends strongly on the metric. BERTScore, METEOR and CHRF are close (mean $|\Delta|$ 0.036 to 0.065), whereas ROUGE (0.137 to 0.181) and BLEU (0.140) are not. Fluency is reproduced best (mean $|\Delta|$ 0.052) and coherence worst (0.123). The order in which the metrics rank also agrees better on some dimensions than others: Kendall's $\tau$ between our ranking of the eleven metrics and the paper's is 0.75 for consistency, 0.73 for fluency, 0.53 for relevance and only 0.15 for coherence.
+
+Some of the paper's findings are reproduced and some are not. Its sharpest finding holds: on consistency, BERTScore recall reaches 0.6667 (paper 0.6618) while BERTScore precision is $-0.2167$ (paper $-0.1912$). METEOR and BERTScore recall remain among the strongest metrics on consistency and fluency, and CIDEr stays negative on consistency. Two findings do not hold. ROUGE-L is not weaker than higher-order ROUGE in our results: on coherence it reaches 0.3833, above ROUGE-1 (0.3667) and ROUGE-2 (0.2500). And averaged over the eleven variants, coherence is not the weakest dimension: in the paper the mean is lowest for coherence (0.178), but in ours it is lowest for consistency (0.179), with coherence at 0.230.
+
+\paragraph{Why the results may differ.}
+The causes of the gaps have not been established; the following are possible reasons. First, implementation: ROUGE, which shows the largest gaps, was computed with a different package, and how the paper combined its 11 references is not stated. BLEU, however, was computed with the authors' own code and still differs by a similar amount, so implementation alone does not explain the gaps. Second, software versions: every package is newer than in 2020, MoverScore had to be patched, and the toolkit's defaults may not match the settings the paper used. Third, sensitivity: with 16 systems there are 120 pairs, so swapping the order of a single pair changes $\tau$ by 0.017, and small changes in system means can move $\tau$ noticeably. Finally, the paper's coherence, consistency and relevance values are all multiples of $1/136$, the number of pairs among 17 items, whereas ours are multiples of $1/120$. This suggests, but does not show, that the paper ranked 17 entries rather than 16. A likely candidate is visible in the paper's Table~3, which reports human ratings for 17 outputs, including two Pegasus variants under M23 (C4 and dynamic mix), whereas the released file has 16 system identifiers. If the paper's correlations included both variants, a 16-system ranking cannot reproduce them exactly.
+
+\section{Construction of New Data}
+\label{sec:newdata}
+
+As planned in the proposal, the new data is of two kinds: an existing dataset annotated by others under a different protocol (RealSumm), and a corpus I built and annotated myself from non-news sources. Both were converted to records in the style of Figure~\ref{fig:summeval}, so that the replication pipeline could be applied to them unchanged.
+
+\subsection{Existing data: RealSumm}
+\label{sec:realsumm}
+
+RealSumm \citep{bhandari-etal-2020-reevaluating} contains system summaries of 100 CNN/DailyMail test documents with one reference each, scored by human annotators. It is released on GitHub under CC BY 4.0.\footnote{\url{https://github.com/neulab/REALSumm}} Its human score is LitePyramid recall \citep{shapira-etal-2019-crowdsourcing}: the proportion of content units in the reference that annotators found in the system summary, from 0 to 1. RealSumm therefore draws on the same news corpus as SummEval but changes how the humans were asked. It is not a controlled test of the protocol alone: its 100 documents were not checked against SummEval's, and its systems and number of references also differ.
+
+The summaries and scores are stored in two Python pickle files, one for 14 abstractive and one for 11 extractive systems. One system, \texttt{bart\_out}, appears in both with identical summaries for all 100 documents, so it was kept once, giving 24 systems and 2,400 summaries. A conversion script removed the \texttt{<t>}\,\texttt{</t>} sentence tags, collapsed whitespace, cast NumPy scores to plain floats and kept RealSumm's own precomputed scores for a sanity check (Figure~\ref{fig:realsumm}). Compared with SummEval, RealSumm has one reference instead of 11, one human score instead of four dimensions, and 24 systems instead of 16.
+
+\begin{figure}[t]
+\footnotesize
+\begin{verbatim}
+{"id": "52",
+ "model_id": "presumm_out_trans_abs",
+ "type": "abs",
+ "decoded": "manchester derby takes place at
+   old trafford on sunday afternoon police
+   have no objections to the late afternoon
+   kick-off ...",
+ "references": ["manchester united take on
+   manchester city on sunday . match will
+   begin at 4pm local time at united 's old
+   trafford home . ..."],
+ "litepyramid_recall": 0.3,
+ "realsumm_scores": {
+   "rouge_1_f_score": 0.42719, ...,
+   "litepyramid_recall": 0.3}}
+\end{verbatim}
+\caption{The first converted RealSumm record, trimmed. \texttt{litepyramid\_recall} is the human score.}
+\label{fig:realsumm}
+\end{figure}
+
+\subsection{New corpus: Wikipedia and arXiv}
+\label{sec:corpus}
+
+The constructed corpus tests whether the paper's conclusions hold outside news. It has 30 documents. Fifteen are random English Wikipedia articles (CC BY-SA 4.0), with the lead section as the reference and the article body as the source. Fifteen are arXiv computer-science papers, collected through arXiv's OAI-PMH interface and kept only if licensed CC BY, CC BY-SA or CC0; the abstract is the reference and the Introduction, parsed from the arXiv HTML version, is the source. A document was kept only if its reference had at least 40 words and its source at least 400; reaching 15 of each meant checking 65 Wikipedia pages and 177 arXiv records. Each document records its title, URL or revision, licence and word counts (Figure~\ref{fig:corpus}; an arXiv example is in Appendix~\ref{app:arxiv}).
+
+Wikipedia text was cut at its end sections (\emph{See also}, \emph{References} and similar) and its headings removed. To keep inputs comparable to the original data, every source was truncated at a sentence boundary to at most 656 words, the median length of the 100 CNN/DailyMail articles in RealSumm (minimum 227, maximum 1,903). All 30 sources end up between 435 and 656 words. References were kept whole, so their length varies from 46 to 762 words; one Wikipedia reference (762 words) is longer than its truncated source (603 words). More generally, a Wikipedia lead summarises the whole article and an arXiv abstract the whole paper, while the source is only part of it: the article body or the Introduction, truncated. A reference can therefore contain content the systems never saw, which lowers reference-based scores for reasons unrelated to summary quality; this limits the corpus and its comparison with SummEval.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+System & Avg.\ words & Novel bigrams \\
+\midrule
+\texttt{lead3} & 71.8 & 0.0\% \\
+\texttt{textrank} & 115.0 & 1.4\% \\
+\texttt{bart\_large\_cnn} & 56.2 & 7.6\% \\
+\texttt{distilbart\_cnn\_6\_6} & 50.3 & 6.7\% \\
+\texttt{distilbart\_weak} & 21.4 & -- \\
+\bottomrule
+\end{tabular}
+\caption{The five summarisation systems on the new corpus (30 summaries each). Novel bigrams are bigrams in the summary that do not occur in the source.}
+\label{tab:systems}
+\end{table}
+
+Five systems summarised every document, giving 150 summaries (Table~\ref{tab:systems}). As in SummEval, they mix extractive and abstractive approaches: \texttt{lead3} takes the first three sentences and \texttt{textrank} is an unsupervised graph-based extractor \citep{mihalcea-tarau-2004-textrank}. \texttt{bart\_large\_cnn} (\texttt{facebook/bart-large-cnn}, \citealp{lewis-etal-2020-bart}) and \texttt{distilbart\_cnn\_6\_6} (\texttt{sshleifer/distilbart-cnn-6-6}, \citealp{shleifer-rush-2020-distillation}) are pretrained abstractive models of different sizes, both fine-tuned on CNN/DailyMail. The fifth, \texttt{distilbart\_weak}, is the same distilled model with greedy decoding limited to 30 new tokens, so its outputs are short and often cut mid-sentence (21.4 words on average; one output is empty). That empty summary was given 0.0 by BERTScore, METEOR, CIDEr and MoverScore and left out of their batch runs, while ROUGE, CHRF and BLEU scored it directly; it was rated and judged like every other summary. It was included deliberately: SummEval's expert means for consistency and fluency are close to the maximum (4.71 and 4.69), and a weaker system spreads the scores on those dimensions. The installed \texttt{transformers} 5.17.0 has no summarisation pipeline, so the abstractive models were run through their \texttt{generate} method; on the CPU this took 701\,s, 928\,s and 418\,s respectively. The abstractive models copy heavily from the source (7.6\% and 6.7\% novel bigrams), so the new corpus is, like SummEval's, largely extractive.
+
+\begin{figure*}[t]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\multicolumn{2}{@{}p{\textwidth}@{}}{\textbf{Document} \texttt{wiki-7059}, ``Civil defense'', CC BY-SA 4.0, \url{https://en.wikipedia.org/?curid=7059}; source 4,223 words, truncated to 655} \\
+\midrule
+Reference (187 w) & Civil defense or civil protection is an effort to protect the citizens of a state (generally non-combatants) from human-made and natural disasters. It uses the \ldots \\
+Source (655 w) & The advent of civil defense was stimulated by the experience of the bombing of civilian areas during the First World War. The bombing of the United Kingdom bega\ldots \\
+\midrule
+\texttt{lead3} (64 w) & The advent of civil defense was stimulated by the experience of the bombing of civilian areas during the First World War. The bombing of the \ldots \\
+\texttt{textrank} (93 w) & After the war, attention was turned toward civil defense in the event of war, and the Air Raid Precautions Committee (ARP) was established i\ldots \\
+\texttt{bart\_large\_cnn} (61 w) & The advent of civil defense was stimulated by the experience of the bombing of civilian areas during the First World War. The Air Raid Preca\ldots \\
+\texttt{distilbart\_cnn\_6\_6} (45 w) & German bombing operations of the First World War were surprisingly effective, especially after the Gotha bombers surpassed the zeppelins . T\ldots \\
+\texttt{distilbart\_weak} (23 w) & The Air Raid Precautions Committee was established in 1924 to investigate ways for protecting civilians from air-raids . The Air Raid Precau\ldots \\
+\midrule
+\multicolumn{2}{@{}p{\textwidth}@{}}{\textbf{Annotation sheet} columns: \texttt{item, doc, source, summary, coherence, consistency, fluency, relevance} (no system name)} \\
+\multicolumn{2}{@{}p{\textwidth}@{}}{\textbf{First-pass rating} of item 1: coherence 3, consistency 4, fluency 3, relevance 2} \\
+\bottomrule
+\end{tabularx}
+\caption{The new corpus: one document with its reference, source and five summaries (all trimmed), followed by the structure of the blind annotation sheet and one rating.}
+\label{fig:corpus}
+\end{figure*}
+
+\subsection{Human annotation and agreement}
+\label{sec:annotation}
+
+With no budget for paid annotators, all 150 summaries were rated by one annotator, myself, as the proposal stated; SummEval used three experts and five crowd workers. The guidelines quote SummEval's definitions of the four dimensions and add my own descriptions of what scores 1, 3 and 5 look like (Appendix~\ref{app:guidelines}). A script built a blind annotation sheet. Items are grouped by document so that each source is read once, presented in a random order (seed 8240), and carry no system name (Figure~\ref{fig:corpus}); the key linking items to systems was kept in a separate file that was not opened until all ratings were done. An interactive script recorded the 1 to 5 ratings and saved after every item, so the work could be resumed.
+
+To measure agreement, a random 20\% subset (30 items from 20 documents, seed 8240) was rated again six days later under the same blind conditions. Table~\ref{tab:agreement} reports exact agreement, agreement within one point, Kendall's $\tau$-b and Krippendorff's $\alpha$ \citep{krippendorff-2011-computing} on an interval scale. Using the threshold of about 0.67 from the proposal, coherence, consistency and fluency are reliable. Relevance is not ($\alpha$ 0.508): only a third of its ratings repeat exactly, although 93\% are within one point, so my relevance judgements drift by a point between sessions. With 30 items these figures are approximate. They measure one person's self-consistency, not agreement between people, so they cannot be compared directly with SummEval's inter-expert $\alpha$ of 0.7127.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Dimension & Exact & Within 1 & $\tau$-b & $\alpha$ \\
+\midrule
+Coherence & 0.67 & 0.97 & 0.740 & 0.768 \\
+Consistency & 0.87 & 1.00 & 0.650 & 0.905 \\
+Fluency & 0.60 & 1.00 & 0.724 & 0.809 \\
+Relevance & 0.33 & 0.93 & 0.711 & 0.508 \\
+\bottomrule
+\end{tabular}
+\caption{Intra-annotator agreement between the first rating and a re-rating six days later (30 items).}
+\label{tab:agreement}
+\end{table}
+
+The documents, summaries and metric scores are released as JSONL in the repository. The ratings are kept as CSV files joined to the summaries through the key file, rather than inside the JSONL records as the proposal planned.
+
+\section{Results on New Data}
+\label{sec:results}
+
+All new results use the replication's pipeline: the same metric code and settings, mean scores per system, and the same Kendall's $\tau$-b function. Where the evaluation differs from the replication, this is stated. The data, its processing and the annotation agreement are described in Section~\ref{sec:newdata} (Figures~\ref{fig:realsumm} and \ref{fig:corpus}, Table~\ref{tab:agreement}).
+
+\subsection{RealSumm}
+\label{sec:res-realsumm}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+& RealSumm & \multicolumn{2}{c}{SummEval relevance} \\
+\cmidrule(l){3-4}
+Metric & LitePyr. & Ours & Paper \\
+\midrule
+ROUGE-1 & 0.3261 & 0.5667 & 0.4118 \\
+ROUGE-2 & 0.2899 & 0.4833 & 0.2941 \\
+ROUGE-L & 0.1159 & 0.4833 & 0.2353 \\
+CHRF & 0.7246 & 0.5333 & 0.5882 \\
+BLEU & 0.0435 & 0.2833 & 0.2206 \\
+BERTScore-P & 0.0145 & 0.0833 & 0.1618 \\
+BERTScore-R & 0.7464 & 0.4333 & 0.3088 \\
+BERTScore-F & 0.3188 & 0.4000 & 0.4265 \\
+METEOR & 0.8406 & 0.5500 & 0.4265 \\
+CIDEr & $-$0.4203 & $-$0.0333 & 0.1912 \\
+MoverScore & 0.2971 & 0.2833 & 0.2941 \\
+\bottomrule
+\end{tabular}
+\caption{System-level Kendall's $\tau$ on RealSumm (24 systems, 1 reference, LitePyramid recall), beside SummEval relevance from Table~\ref{tab:replication}.}
+\label{tab:realsumm}
+\end{table}
+
+Table~\ref{tab:realsumm} gives the RealSumm results. The evaluation differs from the replication in three ways: the human score is LitePyramid recall rather than four 1 to 5 ratings, there is one reference instead of 11, and there are 24 systems instead of 16. Because LitePyramid recall measures how much of the reference's content a summary contains, the closest SummEval dimension is relevance, which is shown alongside.
+
+Three metrics agree strongly with the human ranking: METEOR (0.8406), BERTScore recall (0.7464) and CHRF (0.7246). These are also among the strongest on SummEval relevance, and all three put weight on recall, which suits a recall-based human score (an inference, not tested). The paper's two clearest findings reappear more sharply than in the replication. BERTScore recall is far above precision (0.7464 against 0.0145), and ROUGE-L (0.1159) is weaker than ROUGE-1 and ROUGE-2 (0.3261 and 0.2899), as the paper found on SummEval but our replication did not. CIDEr is negative ($-0.4203$), as it is on SummEval consistency. As a check, $\tau$ computed from RealSumm's own precomputed ROUGE F1 scores gives 0.3116, 0.2681 and 0.2246; the first two are close to ours. The ROUGE-L gap may arise because RealSumm computes ROUGE-L sentence by sentence, while ours runs on one line after the sentence tags were removed (an inference, not verified).
+
+\subsection{New corpus}
+\label{sec:res-corpus}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{@{}l rrrr rrrr@{}}
+\toprule
+& \multicolumn{4}{c}{System level (5 systems)} & \multicolumn{4}{c}{Summary level (30 documents)} \\
+\cmidrule(lr){2-5}\cmidrule(l){6-9}
+Metric & Coh & Con & Flu & Rel & Coh & Con & Flu & Rel \\
+\midrule
+ROUGE-1 & 0.200 & 0.600 & 0.600 & 0.800 & 0.207 & 0.238 & 0.205 & 0.447 \\
+ROUGE-2 & 0.400 & 0.400 & 0.800 & 0.600 & 0.084 & 0.189 & 0.072 & 0.305 \\
+ROUGE-L & 0.200 & 0.200 & 0.600 & 0.800 & 0.151 & $-$0.012 & 0.166 & 0.358 \\
+CHRF & 0.400 & 0.800 & 0.400 & 0.600 & 0.216 & 0.323 & 0.230 & 0.533 \\
+BLEU & 0.400 & 0.400 & 0.800 & 0.600 & 0.180 & 0.153 & 0.132 & 0.475 \\
+BERTScore-P & 0.000 & $-$0.400 & 0.000 & 0.200 & 0.040 & 0.086 & 0.092 & 0.022 \\
+BERTScore-R & 0.200 & 0.600 & 0.600 & 0.800 & 0.210 & 0.244 & 0.241 & 0.531 \\
+BERTScore-F & 0.200 & 0.200 & 0.600 & 0.800 & 0.151 & 0.229 & 0.174 & 0.422 \\
+METEOR & 0.200 & 0.600 & 0.600 & 0.800 & 0.209 & 0.283 & 0.197 & 0.522 \\
+CIDEr & 0.400 & 0.000 & 0.400 & 0.600 & 0.323 & 0.203 & 0.191 & 0.429 \\
+MoverScore & 0.200 & 0.200 & 0.600 & 0.800 & 0.148 & 0.189 & 0.185 & 0.420 \\
+\midrule
+Mean of metrics & 0.255 & 0.327 & 0.545 & 0.673 & 0.174 & 0.193 & 0.171 & 0.406 \\
+\midrule
+LLM judge & 0.600 & 1.000 & 0.738 & 0.316 & 0.427 & 0.504 & 0.435 & 0.270 \\
+\bottomrule
+\end{tabular}
+\caption{Kendall's $\tau$-b between each metric (and the LLM judge, Section~\ref{sec:res-judge}) and the annotator's first-pass ratings on the new corpus. Summary level: $\tau$ over the five summaries of each document, averaged over the 30 documents, except consistency, which is defined only for the 15 documents in which my five consistency ratings are not all equal.}
+\label{tab:corpus}
+\end{table*}
+
+Table~\ref{tab:corpus} gives the results on the constructed corpus. The evaluation differs from the replication in three ways: there is one reference instead of 11, five systems instead of 16, and one annotator's first-pass ratings instead of the mean of three experts. Because five systems give only ten pairs, system-level $\tau$ moves in steps of 0.2 when there are no ties (with ties, $\tau$-b takes other values, as in the judge's row) and is fragile, so I also report summary-level $\tau$: for each document, the five summaries are ranked by the metric and by the annotator, and the 30 values are averaged. The paper reports only system-level correlation.
+
+The pattern across dimensions differs from SummEval's. Relevance is now the dimension the metrics capture best, with a mean summary-level $\tau$ of 0.406 and values up to 0.533 (CHRF), while coherence, consistency and fluency all average below 0.20. On SummEval, relevance was low to moderate and the strongest correlations were on consistency and fluency (Section~\ref{sec:paper}). Two findings carry over. Coherence is again poorly captured (summary level 0.040 to 0.323), and BERTScore again splits on consistency, with recall well above precision at both levels (0.600 against $-0.400$ at system level). The best metrics also overlap with the replication's: CHRF, METEOR and BERTScore recall are among the strongest on relevance here and among the closest to the paper there.
+
+The causes of the different pattern have not been established, but the data suggests three. First, consistency has almost no variance: 126 of my 150 consistency ratings are 5, so summary-level $\tau$ on consistency is defined for only 15 of the 30 documents. This is the ceiling effect the weak system was meant to reduce, and it remained because extractive summaries copy the source. Second, the weak system's truncated outputs are short and unfinished, which affects coherence and fluency in ways that word-overlap metrics do not measure. Third, the strongest result is on relevance, the dimension on which my own ratings were least reliable ($\alpha$ 0.508, Table~\ref{tab:agreement}), so it should be read with caution.
+
+\subsection{The LLM judge}
+\label{sec:res-judge}
+
+\paragraph{Role and setup.}
+The proposal added an LLM judge as a third point of comparison: a model that scores each summary directly on the four dimensions, as a human annotator does \citep{liu-etal-2023-geval}. It is validated against SummEval's expert ratings before being applied to the new corpus. I used Qwen3-4B \citep{yang-etal-2025-qwen3}, a locally run open-weight model, as the proposal preferred, so there was no API cost and no data was sent to a third party. It ran as a 4-bit quantised file (Q4\_K\_M) through \texttt{llama-cpp-python} 0.3.36 on the CPU, with a 2,048-token context and its thinking mode off. A smaller model, Qwen2.5-3B, was tried first and dropped: on an 8-call test it confused dimensions, and 4 of its 8 scores were within one point of the expert mean, against 7 of 8 for Qwen3-4B. Because the judge needs the source articles, which SummEval does not distribute, all 100 were rebuilt from the CNN/DailyMail 3.0.0 test split by matching their hashes.
+
+Each call judges one dimension. The prompt shows the source, then the summary, then SummEval's definition of that dimension, and asks for a score from 1 (worst) to 5 (best). The judge first writes a reason of at most 25 words and then gives the score, as JSON constrained by a grammar so that the score must be an integer from 1 to 5 (Figure~\ref{fig:judge}). Temperature is 0.2. The order of articles, of summaries within an article and of dimensions within a summary is randomised (seed 8240).
+
+\begin{figure}[t]
+\footnotesize
+\begin{verbatim}
+{"id": "dm-test-4e0de0ec...8f30aac861f",
+ "model_id": "M23", "dim": "coherence",
+ "run": 0, "score": 4,
+ "reasoning": "The summary is coherent, with
+   sentences logically connecting Ozil's
+   actions, his recent performance, and
+   upcoming matches.",
+ "raw": "{\"reasoning\": ..., \"score\": 4}",
+ "prompt_tokens": 660, "completion_tokens": 33,
+ "sec": 74.3}
+\end{verbatim}
+\caption{One line of the judge's output on SummEval, trimmed. Each line is one call: one summary and one dimension.}
+\label{fig:judge}
+\end{figure}
+
+\paragraph{Validation on SummEval.}
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+& \multicolumn{2}{c}{System level} & \multicolumn{2}{c}{Summary level} \\
+\cmidrule(lr){2-3}\cmidrule(l){4-5}
+Dim. & Judge & ROUGE & Judge & ROUGE \\
+\midrule
+Coh & 0.4576 & 0.4370 & 0.2544 & 0.1947 \\
+Con & 0.4915 & 0.3530 & 0.3013 & 0.2092 \\
+Flu & 0.6891 & 0.3264 & 0.4736 & 0.1544 \\
+Rel & 0.7395 & 0.5546 & 0.2838 & 0.2421 \\
+\bottomrule
+\end{tabular}
+\caption{The LLM judge against the best ROUGE variant on the same 50 SummEval articles (16 systems; Kendall's $\tau$-b against the mean expert rating). ``Best'' is the highest $\tau$ among the ROUGE variants, all with 11 references: ROUGE-1 at system level (ROUGE-2 ties on consistency); at summary level ROUGE-L for coherence and fluency, ROUGE-2 for consistency and ROUGE-1 for relevance.}
+\label{tab:judge}
+\end{table}
+Because of runtime (about 24 minutes per article on two CPU cores), the judge scored 50 of the 100 SummEval articles, chosen by a seeded shuffle: 800 summaries and 3,200 calls. Table~\ref{tab:judge} compares it with the best ROUGE variant on the same 50 articles. In this experiment the judge agrees with the experts more than ROUGE does on every dimension at both levels, although on system-level coherence the margin is only 0.02. The largest gain is on fluency (0.6891 against 0.3264 at system level), a quality that overlap with a reference cannot measure. These values are not directly comparable with Table~\ref{tab:replication}, which uses all 100 articles, and no significance test was run. Repeat runs were limited to a pilot of 576 calls (3 articles, 16 summaries, 4 dimensions, 3 runs). All three runs gave the same score for 69\%, 83\%, 79\% and 56\% of items (coherence, consistency, fluency, relevance), and averaging the pilot runs instead of using the first changes every final $\tau$ by at most 0.02.
+
+\paragraph{Results on the new corpus.}
+The judge's correlations with my ratings are in the last row of Table~\ref{tab:corpus}. It has the highest summary-level $\tau$ of any method on coherence (0.427), consistency (0.504) and fluency (0.435), the three dimensions the metrics capture worst. On relevance it falls behind most metrics at both levels (0.270 at summary level). Its relevance scores are higher than mine: I gave 83 of the 150 summaries a 2, while the judge's scores spread across the scale (4, 34, 43, 41 and 28 summaries for scores 1 to 5). The judge and the metrics therefore complement each other on this corpus, with the metrics better on content selection and the judge better on readability and faithfulness.
+
+\paragraph{Deviations and limitations.}
+Five departures from the proposal are declared (Appendix~\ref{app:deviations}): only 50 SummEval articles were judged; repeated runs were limited to the pilot; scores are defined only by their end points, as in the paper's instructions; a small 4-bit model was used because of the hardware; and two sentences were added to the instructions (Appendix~\ref{app:prompt}). Calls that exceeded the 80-token output limit (64 on SummEval, 15 on the corpus) were rerun with 160 tokens; one SummEval call still failed and is excluded. The judge was not run on RealSumm, was not compared with a stronger model, and was not tested for position, verbosity or self-enhancement bias \citep{zheng-etal-2023-judging}, although the last is unlikely because Qwen3 wrote none of the judged summaries.
+
+\section{Ethical Considerations}
+\label{sec:ethics}
+
+\citet{karamolegkou-etal-2025-ethical} find that most ethics statements in NLP papers are disclaimers, and recommend stating concerns, actions taken and suggestions instead. \citet{benotti-blackburn-2022-ethics} ask who benefits, who may be harmed and whether harms fall on vulnerable groups. This section follows both and is organised around the principles of the Australian Code for the Responsible Conduct of Research \citep{nhmrc-2018-code}: honesty, rigour, transparency, fairness, respect, recognition, accountability and promotion.
+
+\paragraph{Issues in the original paper.}
+I found no ethics statement in the paper; this was common at the time, when only 15.7\% of ACL 2021 long papers had one \citep{benotti-blackburn-2022-ethics}. On \emph{fairness}, the paper reports how crowd workers were selected and that their pay was set to average 12 USD per hour. Workers were restricted to the United States, the United Kingdom and Australia to ensure native English speakers, which narrows whose judgement defines summary quality; \citet{pyatkin-etal-2023-clarifydelphi} acknowledge the same Western-centred limitation for their US crowd. On \emph{rigour}, experts could see each other's scores in the second round, so the rise in agreement from 0.4132 to 0.7127 partly reflects reconciliation rather than independent judgement. On \emph{respect} for others' work, the CNN/DailyMail articles belong to their publishers, and SummEval releases only their identifiers and paths. It does release the model outputs, some of which make false statements about real, named people, such as the claim about a footballer in Figure~\ref{fig:summeval}.
+
+\paragraph{Issues in publishing on the new data.}
+The main concern is \emph{honesty and rigour} with a single annotator who is also the author and who knew the hypotheses being tested. The actions taken were a blind and shuffled annotation sheet, a key left unopened until rating was finished, and a delayed re-rating whose agreement is reported in full, including the unreliable relevance score. The ratings are presented as one person's ranking, not as expert judgements. For \emph{transparency}, all scripts, data, prompts and every judge call are public, every deviation from the proposal is declared, and unverified explanations are labelled as inferences.
+
+\emph{Respect} for the sources means honouring their licences. Wikipedia text is CC BY-SA 4.0, which requires attribution and that derived material is shared under the same licence; the arXiv sources are CC BY, CC BY-SA or CC0; RealSumm is CC BY 4.0. Each corpus record keeps its URL, revision or identifier and licence (Figure~\ref{fig:corpus}), so a published corpus can give attribution, and it should be released under CC BY-SA 4.0. CNN/DailyMail text is not committed; a script rebuilds it, as SummEval does. The documents also name real people, such as the subjects of Wikipedia biographies. The generated summaries can misstate facts about them: 24 of my 150 consistency ratings are below 5. A release should therefore label every summary as machine-generated and not to be quoted as fact. On \emph{recognition}, the Code affirms the right of Aboriginal and Torres Strait Islander peoples to be engaged in research that affects or is of significance to them. The 30 documents were sampled at random and not screened for such content; a larger release should screen for it and, where content is of particular significance to these communities, engage with them rather than only filter it out.
+
+On \emph{fairness} and vulnerable groups, the corpus is English only and covers encyclopaedic and computer-science text, so its conclusions should not be generalised to other languages or communities. No one else was annotated or paid; extending the corpus with crowd workers would require fair pay and ethics review. The LLM judge runs locally, so no text was sent to a third party. Its own biases were not tested, and a cheap judge could tempt others to replace human evaluation altogether. It was therefore validated against experts before use, and its weakness on relevance is reported. On \emph{accountability} for resources, all work ran on two CPU cores; the largest cost was about 20 hours for the SummEval judge run (50 articles at about 24 minutes each). Releasing everything openly serves the Code's final principle, the \emph{promotion} of responsible research, by letting others check and repeat the work.
+
+\section{Conclusions, and Other Reflections}
+\label{sec:conclusions}
+
+\paragraph{Replication.}
+The replication succeeded in part. The authors' toolkit ran only after its pinned dependencies were bypassed and two metrics were repaired, and seven of the paper's 14 metrics (eleven variants) could be run on a CPU. The replicated correlations (Table~\ref{tab:replication}) are close to the paper's for BERTScore, METEOR and CHRF but not for ROUGE or BLEU: over all 44 values the mean absolute difference is 0.100, and 28 values are within 0.10. The paper's sharpest finding, the gap between BERTScore recall and precision on consistency, was reproduced almost exactly. Two others were not: ROUGE-L was not weaker than higher-order ROUGE, and coherence was not the weakest dimension. The causes are not established; implementation, software versions and a seventeenth ranked entry in the paper, possibly the second Pegasus variant in its Table~3, are the leading candidates.
+
+\paragraph{Generalisation.}
+The paper's conclusions travelled unevenly. On RealSumm (Table~\ref{tab:realsumm}), which keeps the news corpus but changes the human protocol, the paper's findings reappeared more clearly than in the replication, and recall-oriented metrics (METEOR, BERTScore recall, CHRF) led. On the non-news corpus (Table~\ref{tab:corpus}), coherence was again poorly captured and the BERTScore split held, but relevance became the best-captured dimension while coherence, consistency and fluency all had weak summary-level correlations. Because the corpus also differs from SummEval in domain, systems, references and annotator, this is a shift in which dimensions the metrics capture rather than a simple reversal. The LLM judge agreed with the experts better than ROUGE on all four SummEval dimensions, and on the new corpus it led on coherence, consistency and fluency but trailed the metrics on relevance. No single metric is reliable across dimensions, protocols and domains. Of the paper's conclusions, the one that generalised best is that coherence is not covered by current overlap metrics.
+
+\paragraph{Reflections.}
+Annotation was harder than expected, and relevance hardest of all: my own ratings of it were not reliable ($\alpha$ 0.508), largely because I had not decided how much content a short summary of a long Wikipedia lead should contain. With hindsight, I would write relevance anchors with worked examples, run a short calibration round before the first pass, and recruit a second annotator so that agreement between people could be measured. The deliberately weak system produced unfinished sentences but few factual errors, so the consistency ceiling remained; a system prone to factual errors would have served the purpose better. Five systems also make system-level $\tau$ coarse. Computing resources constrained Phase 4 most: with two CPU cores, the judge was limited to 50 articles and a single pass, and RealSumm and bias tests were ruled out. Finally, I would begin a replication by rebuilding the 2020 environment in a container \citep{howe-2012-virtual}, so that the effect of software versions could be separated from differences in implementation.
+
+\bibliography{custom}
+
+\appendix
+
+\section{An arXiv Document from the New Corpus}
+\label{app:arxiv}
+
+Figure~\ref{fig:arxiv} shows the first arXiv document in the new corpus, in the same form as the Wikipedia example in Figure~\ref{fig:corpus}. Four of its five summaries open with the source's first sentence, which illustrates how heavily the abstractive models copy from the source (Section~\ref{sec:corpus}).
+
+\begin{figure*}[t]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\multicolumn{2}{@{}p{\textwidth}@{}}{\textbf{Document} \texttt{arxiv-2309.10275} (cs.RO), ``Optimizing Crowd-Aware Multi-Agent Path Finding through Local Communication with Graph Neural Networks'', CC BY 4.0, \url{https://arxiv.org/abs/2309.10275}; Introduction 667 words, truncated to 641} \\
+\midrule
+Reference: abstract (205 w) & Multi-Agent Path Finding (MAPF) in crowded environments presents a challenging problem in motion planning, aiming to find collision-free paths for all \ldots \\
+Source: Introduction (641 w) & Multi-Agent Path Finding (MAPF) poses challenges with broad applications in autonomous warehouses, robotics, aerial swarms, and self-driving vehicles \ldots \\
+\midrule
+\texttt{lead3} (52 w) & Multi-Agent Path Finding (MAPF) poses challenges with broad applications in autonomous warehouses, robotics, a\ldots \\
+\texttt{textrank} (101 w) & Our main contributions can be summarized as follows: \textbullet{} We present a reinforcement learning approach for the mu\ldots \\
+\texttt{bart\_large\_cnn} (47 w) & Multi-Agent Path Finding (MAPF) poses challenges with broad applications in autonomous warehouses, robotics, a\ldots \\
+\texttt{distilbart\_cnn\_6\_6} (50 w) & Multi-Agent Path Finding (MAPF) poses challenges with broad applications in autonomous warehouses, robotics, a\ldots \\
+\texttt{distilbart\_weak} (17 w) & Multi-Agent Path Finding (MAPF) poses challenges with broad applications in autonomous warehouses, robotics, a\ldots \\
+\bottomrule
+\end{tabularx}
+\caption{An arXiv document from the new corpus with its reference, source and five summaries (all trimmed).}
+\label{fig:arxiv}
+\end{figure*}
+
+\section{Annotation Guidelines}
+\label{app:guidelines}
+
+The guidelines quote SummEval's definition of each dimension (Section~\ref{sec:paper}) and add the anchor descriptions below, which are my own. The procedure was to rate one document group at a time, reading the source once per group; to give integers from 1 to 5, rating each dimension independently; and not to open the key file until all ratings were done.
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+Score & Anchor description \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{Coherence}} \\
+1 & disconnected sentences, no clear topic \\
+3 & understandable but jumpy or poorly ordered \\
+5 & flows logically as one connected summary \\
+\multicolumn{2}{@{}l}{\emph{Consistency} (penalise hallucinated facts)} \\
+1 & major false or invented claims \\
+3 & mostly correct, one or two unsupported details \\
+5 & every statement supported by the source \\
+\multicolumn{2}{@{}l}{\emph{Fluency}} \\
+1 & many fragments or errors, hard to read \\
+3 & readable with some errors or a cut-off sentence \\
+5 & grammatical and clean throughout \\
+\multicolumn{2}{@{}l}{\emph{Relevance} (penalise redundancy and excess detail)} \\
+1 & misses the main point \\
+3 & some key points, some trivial ones \\
+5 & captures the key points only \\
+\bottomrule
+\end{tabularx}
+\caption{Score anchors used for the new corpus.}
+\label{tab:anchors}
+\end{table}
+
+\section{LLM-Judge Prompt}
+\label{app:prompt}
+
+Each call sends one system message and one user message. For SummEval:
+
+\begin{quote}\small
+\textbf{System:} You will be given a news article and a summary of it. Rate the summary on one quality dimension, from 1 (worst) to 5 (best).
+
+\textbf{User:} Source article: \texttt{\{source\}} Summary: \texttt{\{summary\}} Evaluation criterion: \texttt{\{definition\}} Note: the summary has been lowercased and tokenized; do not penalize casing or spacing around punctuation. Judge only \texttt{\{dimension\}}; ignore all other qualities. First explain your judgement of the summary's \texttt{\{dimension\}} in one short sentence (at most 25 words), then give a score from 1 to 5. Respond in JSON: \{"reasoning": "...", "score": <1-5>\} /no\_think
+\end{quote}
+
+\texttt{\{definition\}} is SummEval's definition of the dimension, as given to its annotators. For the new corpus, ``news article'' becomes ``document'', ``Source article'' becomes ``Source document'', and the lowercasing note is removed. The output is constrained by a JSON schema in which \texttt{score} must be one of 1, 2, 3, 4 or 5.
+
+\section{Per-Summary Metric Scores}
+\label{app:scores}
+
+Every metric writes one JSON line per summary, keyed by article and system, to \texttt{results/scores/}. The system-level correlations in Tables~\ref{tab:replication}, \ref{tab:realsumm} and \ref{tab:corpus} are computed from these files. Figure~\ref{fig:scores} shows the first two lines of the SummEval BERTScore file; the first is the summary shown in Figure~\ref{fig:summeval}.
+
+\begin{figure}[ht]
+\footnotesize
+\begin{verbatim}
+{"id": "dm-test-8764fb95...2fb8d6b400eee2",
+ "model_id": "M11",
+ "bertscore_p": 0.593326985836029,
+ "bertscore_r": 0.6654025912284851,
+ "bertscore_f": 0.6222130656242371}
+{"id": "dm-test-8764fb95...2fb8d6b400eee2",
+ "model_id": "M13",
+ "bertscore_p": 0.6221783757209778,
+ "bertscore_r": 0.6701167821884155,
+ "bertscore_f": 0.6191784143447876}
+\end{verbatim}
+\caption{Per-summary BERTScore output on SummEval (identifiers trimmed).}
+\label{fig:scores}
+\end{figure}
+
+\newpage
+\section{Deviations from the Proposal}
+\label{app:deviations}
+
+\begin{table}[h!]
+\centering
+\small
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Phase & Deviation & Reason \\
+\midrule
+1 & ROUGE computed with Google \texttt{rouge-score}, not Perl ROUGE-1.5.5 & Perl wrapper did not install (declared in proposal) \\
+1 & Seven of 14 metrics run; ROUGE-WE, S3 and SMS not run; SummaQA, BLANC, SUPERT and data statistics deferred & Embedding download timed out; missing module; source articles not in the released file \\
+1 & Newer, unpinned library versions; MoverScore patched; METEOR paraphrase table added & 2020 pins would not install \\
+1 & No text normalisation beyond each library's tokeniser & Not carried out \\
+1 & Summary-level correlation on SummEval computed only in the judge comparison (50 articles) & Time \\
+3 & Ratings kept as CSV joined by a key file, not inside the JSONL records & Kept the blind sheet and key separate \\
+4 & Judge run on 50 of 100 SummEval articles & About 24 minutes per article on 2 CPU cores \\
+4 & Repeated runs only on a 576-call pilot; full run is a single pass & Runtime \\
+4 & Scores defined by end points only & Follows the paper's instructions rather than a new rubric \\
+4 & Small 4-bit model (Qwen3-4B) & Hardware \\
+4 & Two sentences added to the paper's instructions (Appendix~\ref{app:prompt}) & Lowercased input was penalised; dimensions were mixed \\
+4 & Judge not run on RealSumm & Runtime \\
+\bottomrule
+\end{tabularx}
+\caption{All deviations from the proposal.}
+\label{tab:deviations}
+\end{table}
+
+\end{document}
